@@ -1,0 +1,60 @@
+[
+  {
+    "name": "Six-shooter Pistol",
+    "description": "A basic pistol with decent stopping power.",
+    "type": "Weapon",
+    "keywords": ["Firearm", "Pistol"],
+    "statModifiers": {
+      "Combat": 1
+    },
+    "weight": 1,
+    "darkStoneCount": 0,
+    "equipSlot": "Hand",
+    "goldValue": 100,
+    "upgradeSlots": 1
+  },
+  {
+    "name": "Bandages",
+    "description": "Basic medical supplies. Can be used to heal wounds.",
+    "type": "Supply",
+    "usageEffect": "Discard to heal D6 wounds",
+    "weight": 0,
+    "goldValue": 25,
+    "sideBagType": "Medical"
+  },
+  {
+    "name": "Whiskey",
+    "description": "Strong liquor that can ease pain or bolster courage.",
+    "type": "Supply",
+    "usageEffect": "Discard to heal D3 sanity or gain +1 to your next roll",
+    "weight": 0,
+    "goldValue": 15,
+    "sideBagType": "Drink"
+  },
+  {
+    "name": "Leather Duster",
+    "description": "A long coat offering some protection against the elements and attacks.",
+    "type": "Armor",
+    "keywords": ["Light Armor"],
+    "statModifiers": {
+      "Defense": 1
+    },
+    "weight": 1,
+    "equipSlot": "Body",
+    "goldValue": 50,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Lucky Coin",
+    "description": "A special coin that seems to bring good fortune.",
+    "type": "Trinket",
+    "keywords": ["Luck"],
+    "statModifiers": {
+      "Luck": 1
+    },
+    "weight": 0,
+    "equipSlot": "Accessory",
+    "isPersonalItem": true,
+    "goldValue": 0
+  }
+]

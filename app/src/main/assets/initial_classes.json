@@ -1,0 +1,422 @@
+[
+  {
+    "name": "Gunslinger",
+    "description": "A quick-drawing expert marksman who excels at ranged combat.",
+    "startingHealth": 12,
+    "startingSanity": 8,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 2,
+      "Spirit": 2,
+      "Strength": 2,
+      "Lore": 1,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "U.S. Marshal",
+    "description": "A lawman with a balance of combat and leadership abilities.",
+    "startingHealth": 14,
+    "startingSanity": 7,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 3,
+      "Spirit": 2,
+      "Strength": 3,
+      "Lore": 1,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Preacher",
+    "description": "A faithful servant of God with the ability to combat supernatural threats.",
+    "startingHealth": 10,
+    "startingSanity": 10,
+    "startingAttributes": {
+      "Agility": 1,
+      "Cunning": 1,
+      "Spirit": 4,
+      "Strength": 2,
+      "Lore": 3,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Bandito",
+    "description": "An outlaw with cunning tricks and dirty fighting tactics.",
+    "startingHealth": 11,
+    "startingSanity": 7,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 4,
+      "Spirit": 1,
+      "Strength": 2,
+      "Lore": 0,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Saloon Girl",
+    "description": "A charming entertainer who dances around danger and heals allies with her presence.",
+    "startingHealth": 10,
+    "startingSanity": 9,
+    "startingAttributes": {
+      "Agility": 4,
+      "Cunning": 3,
+      "Spirit": 2,
+      "Strength": 1,
+      "Lore": 1,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Indian Scout",
+    "description": "A mystical tracker with knowledge of the land and otherworldly portals.",
+    "startingHealth": 11,
+    "startingSanity": 9,
+    "startingAttributes": {
+      "Agility": 4,
+      "Cunning": 2,
+      "Spirit": 3,
+      "Strength": 1,
+      "Lore": 2,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Drifter",
+    "description": "A hardened wanderer with experience in both blades and bullets.",
+    "startingHealth": 13,
+    "startingSanity": 7,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 3,
+      "Spirit": 1,
+      "Strength": 4,
+      "Lore": 0,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Frontier Doc",
+    "description": "A surgeon of the old west, capable of healing wounds and combating otherworldly ailments.",
+    "startingHealth": 9,
+    "startingSanity": 11,
+    "startingAttributes": {
+      "Agility": 1,
+      "Cunning": 2,
+      "Spirit": 3,
+      "Strength": 1,
+      "Lore": 4,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Rancher",
+    "description": "A hardy frontiersman who excels in survival and close combat.",
+    "startingHealth": 15,
+    "startingSanity": 6,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 2,
+      "Spirit": 1,
+      "Strength": 4,
+      "Lore": 0,
+      "Luck": 3
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Prospector",
+    "description": "A greedy and lucky old timer, always sniffing out riches.",
+    "startingHealth": 10,
+    "startingSanity": 9,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 3,
+      "Spirit": 2,
+      "Strength": 1,
+      "Lore": 2,
+      "Luck": 4
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Wandering Samurai",
+    "description": "A disciplined warrior with deadly sword skills and honor-bound powers.",
+    "startingHealth": 12,
+    "startingSanity": 8,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 2,
+      "Spirit": 2,
+      "Strength": 3,
+      "Lore": 1,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Sorcerer",
+    "description": "A wielder of ancient magic, casting devastating spells at a price.",
+    "startingHealth": 8,
+    "startingSanity": 12,
+    "startingAttributes": {
+      "Agility": 1,
+      "Cunning": 1,
+      "Spirit": 3,
+      "Strength": 1,
+      "Lore": 5,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Geisha",
+    "description": "A graceful manipulator using charm, mysticism, and misdirection to control the battlefield.",
+    "startingHealth": 9,
+    "startingSanity": 11,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 4,
+      "Spirit": 2,
+      "Strength": 1,
+      "Lore": 2,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Soldier",
+    "description": "A disciplined combatant with tactical training and explosive firepower.",
+    "startingHealth": 14,
+    "startingSanity": 6,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 2,
+      "Spirit": 1,
+      "Strength": 4,
+      "Lore": 0,
+      "Luck": 3
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Tribal Shaman",
+    "description": "A spiritual guide with powerful totems and the ability to manipulate fate.",
+    "startingHealth": 9,
+    "startingSanity": 11,
+    "startingAttributes": {
+      "Agility": 1,
+      "Cunning": 2,
+      "Spirit": 4,
+      "Strength": 1,
+      "Lore": 3,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Scavenger",
+    "description": "A scrappy survivor who makes do with whatever gear and tech they can salvage.",
+    "startingHealth": 11,
+    "startingSanity": 9,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 3,
+      "Spirit": 2,
+      "Strength": 2,
+      "Lore": 1,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Techno-Salvager",
+    "description": "An expert with high-tech gear, capable of rewiring and repairing alien technology.",
+    "startingHealth": 10,
+    "startingSanity": 10,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 3,
+      "Spirit": 2,
+      "Strength": 1,
+      "Lore": 4,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Trederran Veteran",
+    "description": "A battle-hardened soldier from a war-torn alien world, wielding devastating Trederran weapons.",
+    "startingHealth": 14,
+    "startingSanity": 6,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 2,
+      "Spirit": 1,
+      "Strength": 4,
+      "Lore": 1,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Custodian",
+    "description": "An ancient automaton of the Derelict Ship, reawakened with a sense of purpose.",
+    "startingHealth": 16,
+    "startingSanity": 4,
+    "startingAttributes": {
+      "Agility": 1,
+      "Cunning": 2,
+      "Spirit": 2,
+      "Strength": 5,
+      "Lore": 0,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Beastman Avenger",
+    "description": "A fierce tribal warrior channeling rage and ancestral fury in battle.",
+    "startingHealth": 13,
+    "startingSanity": 7,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 2,
+      "Spirit": 2,
+      "Strength": 4,
+      "Lore": 0,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Dark Stone Shaman",
+    "description": "A mystic who draws power from corrupted Dark Stone, wielding dangerous supernatural forces.",
+    "startingHealth": 8,
+    "startingSanity": 12,
+    "startingAttributes": {
+      "Agility": 1,
+      "Cunning": 2,
+      "Spirit": 4,
+      "Strength": 1,
+      "Lore": 4,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Samurai Warrior",
+    "description": "A noble warrior who excels at melee combat with honor and precision.",
+    "startingHealth": 14,
+    "startingSanity": 6,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 2,
+      "Spirit": 1,
+      "Strength": 4,
+      "Lore": 0,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Sorceress",
+    "description": "A master of magic and spells, wielding powerful elemental forces.",
+    "startingHealth": 9,
+    "startingSanity": 11,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 1,
+      "Spirit": 3,
+      "Strength": 1,
+      "Lore": 5,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Traveling Monk",
+    "description": "A disciplined martial artist who channels inner strength through meditation and combat.",
+    "startingHealth": 12,
+    "startingSanity": 8,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 1,
+      "Spirit": 3,
+      "Strength": 2,
+      "Lore": 2,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Ninja Assassin",
+    "description": "A shadowy killer who uses stealth and speed to strike with deadly precision.",
+    "startingHealth": 10,
+    "startingSanity": 10,
+    "startingAttributes": {
+      "Agility": 5,
+      "Cunning": 3,
+      "Spirit": 2,
+      "Strength": 1,
+      "Lore": 1,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Enforcer",
+    "description": "A brutal and efficient warrior, trained in striking hard and ending fights quickly.",
+    "startingHealth": 15,
+    "startingSanity": 6,
+    "startingAttributes": {
+      "Agility": 2,
+      "Cunning": 2,
+      "Spirit": 1,
+      "Strength": 5,
+      "Lore": 0,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Cowgirl",
+    "description": "A fast-riding sharpshooter who brings her own justice to the frontier.",
+    "startingHealth": 12,
+    "startingSanity": 8,
+    "startingAttributes": {
+      "Agility": 4,
+      "Cunning": 2,
+      "Spirit": 2,
+      "Strength": 2,
+      "Lore": 0,
+      "Luck": 2
+    },
+    "imageResourceName": null
+  },
+  {
+    "name": "Orphan",
+    "description": "A haunted child with a mysterious past and supernatural abilities.",
+    "startingHealth": 6,
+    "startingSanity": 14,
+    "startingAttributes": {
+      "Agility": 3,
+      "Cunning": 2,
+      "Spirit": 5,
+      "Strength": 0,
+      "Lore": 4,
+      "Luck": 1
+    },
+    "imageResourceName": null
+  }
+]
