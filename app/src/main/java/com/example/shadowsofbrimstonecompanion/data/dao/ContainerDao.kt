@@ -17,14 +17,18 @@ interface ContainerDao {
     suspend fun delete(container: Container)
 
     @Transaction
-    @Query("SELECT * FROM containers WHERE itemId = :containerId")
+    @Query("SELECT * FROM containers WHERE id = :containerId")
     fun getContainerWithItems(containerId: Long): Flow<ContainerWithItems?>
 
     @Transaction
-    @Query("SELECT * FROM containers WHERE isStash = 1")
+    @Query("SELECT * FROM containers WHERE isStash = 1 OR isSystemContainer = 1")
     fun getStashes(): Flow<List<ContainerWithItems>>
 
     @Transaction
-    @Query("SELECT * FROM containers WHERE isStash = 0 AND itemId IN (SELECT id FROM items WHERE characterId = :characterId)")
+    @Query("SELECT * FROM containers WHERE (isStash = 0 AND isSystemContainer = 0) AND itemId IN (SELECT id FROM items WHERE characterId = :characterId)")
     fun getContainersForCharacter(characterId: Long): Flow<List<ContainerWithItems>>
+
+    @Transaction
+    @Query("SELECT * FROM containers WHERE isSystemContainer = 1")
+    fun getSystemContainers(): Flow<List<ContainerWithItems>>
 }

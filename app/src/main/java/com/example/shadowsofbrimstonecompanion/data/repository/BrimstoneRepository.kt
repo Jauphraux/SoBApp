@@ -26,7 +26,7 @@ class BrimstoneRepository(
     private val characterClassDefinitionDao: CharacterClassDefinitionDao,
     private val itemDefinitionDao: ItemDefinitionDao,
     private val containerDao: ContainerDao
-    ) {
+) {
     // Character operations
     val allCharacters: Flow<List<Character>> = characterDao.getAllCharacters()
 
@@ -77,8 +77,22 @@ class BrimstoneRepository(
     }
 
     // Container operations
-    suspend fun createContainer(itemId: Long, maxCapacity: Int, acceptedItemTypes: List<String> = emptyList(), isStash: Boolean = false, name: String? = null) {
-        val container = Container(itemId, maxCapacity, acceptedItemTypes, isStash, name)
+    suspend fun createContainer(
+        itemId: Long?,
+        maxCapacity: Int,
+        acceptedItemTypes: List<String> = emptyList(),
+        isStash: Boolean = false,
+        name: String? = null,
+        isSystemContainer: Boolean = false
+    ) {
+        val container = Container(
+            itemId = itemId,
+            maxCapacity = maxCapacity,
+            acceptedItemTypes = acceptedItemTypes,
+            isStash = isStash,
+            name = name,
+            isSystemContainer = isSystemContainer
+        )
         containerDao.insert(container)
     }
 
@@ -141,6 +155,10 @@ class BrimstoneRepository(
         characterClassDefinitionDao.delete(characterClass)
     }
 
+    suspend fun deleteAllClassDefinitions() {
+        characterClassDefinitionDao.deleteAll()
+    }
+
     suspend fun getClassDefinitionCount(): Int {
         return characterClassDefinitionDao.getClassCount()
     }
@@ -156,6 +174,10 @@ class BrimstoneRepository(
 
     suspend fun insertAllItemDefinitions(items: List<ItemDefinition>) {
         itemDefinitionDao.insertAll(items)
+    }
+
+    suspend fun deleteAllItemDefinitions() {
+        itemDefinitionDao.deleteAll()
     }
 
     suspend fun getItemDefinitionCount(): Int {

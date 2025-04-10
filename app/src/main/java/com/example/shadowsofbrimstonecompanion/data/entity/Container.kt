@@ -14,16 +14,19 @@ import com.example.shadowsofbrimstonecompanion.data.converters.AppTypeConverters
             entity = Item::class,
             parentColumns = ["id"],
             childColumns = ["itemId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.CASCADE
         )
     ],
     indices = [Index("itemId")]
 )
 @TypeConverters(AppTypeConverters::class)
 data class Container(
-    @PrimaryKey val itemId: Long,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val itemId: Long? = null,
     val maxCapacity: Int,
     val acceptedItemTypes: List<String> = emptyList(),
     val isStash: Boolean = false,
-    val name: String? = null
+    val name: String? = null,
+    val isSystemContainer: Boolean = false
 )

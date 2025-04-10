@@ -27,7 +27,6 @@ import com.example.shadowsofbrimstonecompanion.data.entity.ItemWithDefinition
 fun ContainerScreen(
     containers: List<ContainerWithItems>,
     allItems: List<ItemWithDefinition>,
-    looseItems: List<ItemWithDefinition>,
     onMoveItem: (Long, Long?) -> Unit,
     onClose: () -> Unit,
     onStoreDarkstone: ((Long) -> Unit)? = null,
@@ -44,173 +43,141 @@ fun ContainerScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Containers & Storage") },
-                navigationIcon = {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Container list
             Text(
-                "Containers",
-                style = MaterialTheme.typography.titleMedium,
+                "Manage Containers",
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.Close, contentDescription = "Close")
+            }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            if (containers.isEmpty()) {
-                Text("No containers available")
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(0.4f)
-                        .fillMaxWidth()
-                ) {
-                    items(containers) { containerWithItems ->
-                        ContainerListItem(
-                            containerWithItems = containerWithItems,
-                            isSelected = containerWithItems == selectedContainer,
-                            onClick = {
-                                Log.d("ContainerScreen", "Container selected: ${containerWithItems.container.name}")
-                                selectedContainer = containerWithItems
-                            },
-                            onStoreDarkstone = onStoreDarkstone,
-                            characterDarkstone = characterDarkstone
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+        // Container list
+        if (containers.isEmpty()) {
+            Text("No containers available")
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(0.4f)
+                    .fillMaxWidth()
+            ) {
+                items(containers) { containerWithItems ->
+                    ContainerListItem(
+                        containerWithItems = containerWithItems,
+                        isSelected = containerWithItems == selectedContainer,
+                        onClick = {
+                            Log.d("ContainerScreen", "Container selected: ${containerWithItems.container.name}")
+                            selectedContainer = containerWithItems
+                        },
+                        onStoreDarkstone = onStoreDarkstone,
+                        characterDarkstone = characterDarkstone
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Container contents
+            // Container details
+            selectedContainer?.let { containerWithItems ->
+                val container = containerWithItems.container
+                val items = containerWithItems.items
+
+                // Container header
                 Text(
-                    "Contents: ${selectedContainer?.container?.name ?: "No container selected"}",
+                    container.name ?: "Unnamed Container",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if (selectedContainer == null) {
-                    Text("Select a container to view its contents")
+                // Container capacity
+                Text("Capacity: ${items.size}/${container.maxCapacity}")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Items in container
+                if (items.isEmpty()) {
+                    Text("Container is empty")
                 } else {
-                    val containerItems = selectedContainer!!.items
-                    if (containerItems.isEmpty()) {
-                        Text("Container is empty")
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .weight(0.6f)
-                                .fillMaxWidth()
-                        ) {
-                            items(containerItems) { item ->
-                                val itemDef = allItems.find { it.item.id == item.id }?.definition
-                                if (itemDef != null) {
-                                    ContainerItemCard(
-                                        itemName = itemDef.name,
-                                        description = itemDef.description,
-                                        onRemove = { onMoveItem(item.id, null) },
-                                        isDarkstone = itemDef.type == "Dark Stone"
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(0.6f)
+                            .fillMaxWidth()
+                    ) {
+                        items(items) { item ->
+                            val itemWithDef = allItems.find { it.item.id == item.id }
+                            if (itemWithDef != null) {
+                                ContainerItemCard(
+                                    itemName = itemWithDef.definition.name,
+                                    description = itemWithDef.definition.description,
+                                    onRemove = { onMoveItem(item.id, null) },
+                                    isDarkstone = itemWithDef.definition.type == "Dark Stone",
+                                    quantity = item.quantity
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Add item section
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Button(
-                            onClick = { showAddItemDialog = true },
-                            modifier = Modifier.align(Alignment.Center)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add item")
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Add Item to Container")
-                        }
-                    }
                 }
-            }
 
-            // Loose items section
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Loose Items",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                if (selectedContainer != null) {
-                    Text(
-                        "${looseItems.size} items available",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (looseItems.isEmpty()) {
-                Text("No loose items in inventory")
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .heightIn(max = 200.dp)
-                        .fillMaxWidth()
+                // Add item button
+                Button(
+                    onClick = { showAddItemDialog = true },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(looseItems) { itemWithDef ->
-                        LooseItemCard(
-                            itemName = itemWithDef.definition.name,
-                            description = itemWithDef.definition.description,
-                            onMove = {
-                                if (selectedContainer != null) {
-                                    onMoveItem(itemWithDef.item.id, selectedContainer!!.container.itemId)
-                                }
-                            },
-                            canMove = selectedContainer != null,
-                            isDarkstone = itemWithDef.definition.type == "Dark Stone"
+                    Text("Add Item to Container")
+                }
+
+                // Add Dark Stone storage button if applicable
+                val acceptsDarkstone = container.acceptedItemTypes.isEmpty() ||
+                        container.acceptedItemTypes.contains("Dark Stone")
+
+                if (acceptsDarkstone && onStoreDarkstone != null && characterDarkstone > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { onStoreDarkstone(container.id) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                    ) {
+                        Text("Store Dark Stone in ${container.name ?: "Container"} (${characterDarkstone} available)")
                     }
                 }
             }
         }
     }
 
-    // Dialog for adding items to container
-    if (showAddItemDialog && selectedContainer != null) {
+    // Add item dialog
+    if (showAddItemDialog) {
         AddItemToContainerDialog(
-            containerWithItems = selectedContainer!!,  // Changed from container to containerWithItems
-            availableItems = looseItems,
             onDismiss = { showAddItemDialog = false },
             onAddItem = { itemId ->
-                onMoveItem(itemId, selectedContainer!!.container.itemId)
+                selectedContainer?.let { container ->
+                    onMoveItem(itemId, container.container.id)
+                }
                 showAddItemDialog = false
+            },
+            availableItems = allItems.filter { itemWithDef ->
+                // Only show items that aren't in containers
+                itemWithDef.item.containerId == null
             }
         )
     }
@@ -279,7 +246,7 @@ fun ContainerListItem(
             if (acceptsDarkstone && onStoreDarkstone != null && characterDarkstone > 0) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { onStoreDarkstone(container.itemId) },
+                    onClick = { container.itemId?.let { onStoreDarkstone(it) } },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -298,7 +265,8 @@ fun ContainerItemCard(
     itemName: String,
     description: String,
     onRemove: () -> Unit,
-    isDarkstone: Boolean = false
+    isDarkstone: Boolean = false,
+    quantity: Int = 1
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -325,7 +293,7 @@ fun ContainerItemCard(
                         )
                     }
                     Text(
-                        text = itemName,
+                        text = if (quantity > 1) "$itemName (x$quantity)" else itemName,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -358,99 +326,11 @@ fun ContainerItemCard(
 }
 
 @Composable
-fun LooseItemCard(
-    itemName: String,
-    description: String,
-    onMove: () -> Unit,
-    canMove: Boolean,
-    isDarkstone: Boolean = false
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isDarkstone)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isDarkstone) {
-                        Text(
-                            "🌑 ", // Dark stone emoji indicator
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                    }
-                    Text(
-                        text = itemName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2
-                )
-
-                if (isDarkstone) {
-                    Text(
-                        text = "Unprotected - may cause corruption",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-
-            Button(
-                onClick = onMove,
-                enabled = canMove,
-                colors = ButtonDefaults.buttonColors(
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Icon(
-                    Icons.Default.MoveDown,
-                    contentDescription = "Move to container"
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Move")
-            }
-        }
-    }
-}
-
-@Composable
 fun AddItemToContainerDialog(
-    containerWithItems: ContainerWithItems,  // Changed parameter type from Container to ContainerWithItems
-    availableItems: List<ItemWithDefinition>,
     onDismiss: () -> Unit,
-    onAddItem: (Long) -> Unit
+    onAddItem: (Long) -> Unit,
+    availableItems: List<ItemWithDefinition>
 ) {
-    val container = containerWithItems.container
-    val items = containerWithItems.items  // Get the items from the containerWithItems
-
-    // Filter items based on container accepted types if necessary
-    val filteredItems = if (container.acceptedItemTypes.isEmpty()) {
-        availableItems
-    } else {
-        availableItems.filter { item ->
-            container.acceptedItemTypes.any { acceptedType ->
-                item.definition.type == acceptedType ||
-                        item.definition.keywords.contains(acceptedType)
-            }
-        }
-    }
-
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -462,7 +342,7 @@ fun AddItemToContainerDialog(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Add Item to ${container.name ?: "Container"}",
+                    text = "Add Item to Container",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -470,47 +350,26 @@ fun AddItemToContainerDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    "Capacity: ${items.size}/${container.maxCapacity}",  // Now correctly uses items from containerWithItems
-                    style = MaterialTheme.typography.bodyMedium
+                    "Select an item to add:",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
                 )
 
-                if (container.acceptedItemTypes.isNotEmpty()) {
-                    Text(
-                        "Accepts: ${container.acceptedItemTypes.joinToString(", ")}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+                Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (filteredItems.isEmpty()) {
-                    Text(
-                        "No compatible items available",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                } else {
-                    Text(
-                        "Select an item to add:",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .heightIn(max = 300.dp)
-                    ) {
-                        items(filteredItems) { itemWithDef ->
-                            ItemSelectionCard(
-                                itemName = itemWithDef.definition.name,
-                                description = itemWithDef.definition.description,
-                                onClick = { onAddItem(itemWithDef.item.id) },
-                                isDarkstone = itemWithDef.definition.type == "Dark Stone"
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .heightIn(max = 300.dp)
+                ) {
+                    items(availableItems) { itemWithDef ->
+                        ItemSelectionCard(
+                            itemName = itemWithDef.definition.name,
+                            description = itemWithDef.definition.description,
+                            onClick = { onAddItem(itemWithDef.item.id) },
+                            isDarkstone = itemWithDef.definition.type == "Dark Stone"
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
 
@@ -685,7 +544,8 @@ fun StashScreen(
                                         itemName = itemDef.name,
                                         description = itemDef.description,
                                         onRemove = { onMoveItem(item.id, null) },
-                                        isDarkstone = itemDef.type == "Dark Stone"
+                                        isDarkstone = itemDef.type == "Dark Stone",
+                                        quantity = item.quantity
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }

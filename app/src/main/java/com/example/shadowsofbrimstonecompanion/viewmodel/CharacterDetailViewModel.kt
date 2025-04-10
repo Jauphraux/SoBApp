@@ -75,8 +75,7 @@ class CharacterDetailViewModel(
         StorageState(
             containers = containers,
             stashes = stashes,
-            allItems = itemsWithDefinitions,
-            looseItems = itemsWithDefinitions.filter { it.item.containerId == null }
+            allItems = itemsWithDefinitions
         )
     }.stateIn(
         scope = viewModelScope,
@@ -125,8 +124,7 @@ class CharacterDetailViewModel(
     data class StorageState(
         val containers: List<ContainerWithItems> = emptyList(),
         val stashes: List<ContainerWithItems> = emptyList(),
-        val allItems: List<ItemWithDefinition> = emptyList(),
-        val looseItems: List<ItemWithDefinition> = emptyList()
+        val allItems: List<ItemWithDefinition> = emptyList()
     )
 
     // Enum for storage tabs
@@ -441,6 +439,13 @@ class CharacterDetailViewModel(
                 return@launch
             }
 
+            // Get the item being moved
+            val itemToMove = storageData.value.allItems.find { it.item.id == itemId }
+            if (itemToMove == null) {
+                _uiMessage.value = "Item not found"
+                return@launch
+            }
+
             // Check capacity
             if (container.items.size >= container.container.maxCapacity) {
                 _uiMessage.value = "Container is full"
@@ -449,22 +454,36 @@ class CharacterDetailViewModel(
 
             // Check item type restrictions
             if (container.container.acceptedItemTypes.isNotEmpty()) {
-                val item = storageData.value.allItems.find { it.item.id == itemId }
-                if (item != null) {
-                    val isAccepted = container.container.acceptedItemTypes.any { acceptedType ->
-                        item.definition.type == acceptedType ||
-                                item.definition.keywords.contains(acceptedType)
-                    }
+                val isAccepted = container.container.acceptedItemTypes.any { acceptedType ->
+                    itemToMove.definition.type == acceptedType ||
+                            itemToMove.definition.keywords.contains(acceptedType)
+                }
 
-                    if (!isAccepted) {
-                        _uiMessage.value = "This container cannot hold this type of item"
-                        return@launch
-                    }
+                if (!isAccepted) {
+                    _uiMessage.value = "This container cannot hold this type of item"
+                    return@launch
                 }
             }
 
-            // All checks passed, move the item
-            repository.moveItemToContainer(itemId, containerId)
+            // Check if there's already an item of the same type in the container
+            val existingItem = container.items.find { existingItem ->
+                val existingItemDef = storageData.value.allItems
+                    .find { it.item.id == existingItem.id }?.definition
+                existingItemDef?.type == itemToMove.definition.type
+            }
+
+            if (existingItem != null) {
+                // Update quantity of existing item
+                val updatedItem = existingItem.copy(
+                    quantity = existingItem.quantity + itemToMove.item.quantity
+                )
+                repository.updateItem(updatedItem)
+                // Delete the original item since we've merged it
+                repository.deleteItem(itemToMove.item)
+            } else {
+                // Move the item to the container
+                repository.moveItemToContainer(itemId, containerId)
+            }
         }
     }
 
@@ -491,6 +510,10 @@ class CharacterDetailViewModel(
                         isStash = false,
                         name = itemWithDef.definition.name
                     )
+
+                    // Update the item to be its own container
+                    val updatedItem = item.copy(containerId = item.id)
+                    repository.updateItem(updatedItem)
 
                     _uiMessage.value = "${itemWithDef.definition.name} is now usable as a container"
                 } else {
@@ -558,7 +581,7 @@ class CharacterDetailViewModel(
 
                 // Check if container accepts dark stone
                 val container = storageData.value.containers.find {
-                    it.container.itemId == containerId
+                    it.container.id == containerId
                 }
 
                 if (container == null) {
@@ -580,61 +603,70 @@ class CharacterDetailViewModel(
                     return@launch
                 }
 
-                // Create a dark stone item
-                val darkstoneItemDef = storageData.value.allItems.find { it.definition.type == "Dark Stone" }?.definition
-
-
-                if (darkstoneItemDef == null) {
-                    // Create a dark stone item definition if none exists
-                    val newDarkstoneDefId = repository.insertItemDefinition(
-                        ItemDefinition(
-                            name = "Dark Stone",
-                            description = "A piece of mysterious otherworldly stone that radiates corruption.",
-                            type = "Dark Stone",
-                            keywords = listOf("Artifact", "Valuable"),
-                            anvilWeight = 0,
-                            darkStoneCount = 1,
-                            goldValue = 50
-                        )
-                    )
-
-                    // Create item
-                    val darkstoneItemId = repository.insertItem(
-                        Item(
-                            characterId = characterId,
-                            itemDefinitionId = newDarkstoneDefId,
-                            quantity = 1,
-                            notes = "From character's dark stone supply",
-                            containerId = containerId
-                        )
-                    )
-
-                    // Reduce character's dark stone count
-                    val updatedCharacter = character.copy(darkstone = character.darkstone - 1)
-                    updateCharacter(updatedCharacter)
-
-                    _uiMessage.value = "Dark stone stored in container"
-                } else {
-                    // Use existing dark stone definition
-                    val darkstoneItemId = repository.insertItem(
-                        Item(
-                            characterId = characterId,
-                            itemDefinitionId = darkstoneItemDef.id,
-                            quantity = 1,
-                            notes = "From character's dark stone supply",
-                            containerId = containerId
-                        )
-                    )
-
-                    // Reduce character's dark stone count
-                    val updatedCharacter = character.copy(darkstone = character.darkstone - 1)
-                    updateCharacter(updatedCharacter)
-
-                    _uiMessage.value = "Dark stone stored in container"
+                // Find existing dark stone item in container
+                val existingDarkstoneItem = container.items.find { item ->
+                    val definition = storageData.value.allItems
+                        .find { it.item.id == item.id }?.definition
+                    definition?.type == "Dark Stone"
                 }
+
+                if (existingDarkstoneItem != null) {
+                    // Update quantity of existing dark stone item
+                    val updatedItem = existingDarkstoneItem.copy(
+                        quantity = existingDarkstoneItem.quantity + 1
+                    )
+                    repository.updateItem(updatedItem)
+                } else {
+                    // Create a new dark stone item
+                    val darkstoneItemDef = storageData.value.allItems.find { it.definition.type == "Dark Stone" }?.definition
+
+                    if (darkstoneItemDef == null) {
+                        // Create a dark stone item definition if none exists
+                        val newDarkstoneDefId = repository.insertItemDefinition(
+                            ItemDefinition(
+                                name = "Dark Stone",
+                                description = "A piece of mysterious otherworldly stone that radiates corruption.",
+                                type = "Dark Stone",
+                                keywords = listOf("Artifact", "Valuable"),
+                                anvilWeight = 0,
+                                darkStoneCount = 1,
+                                goldValue = 50
+                            )
+                        )
+
+                        // Create item
+                        repository.insertItem(
+                            Item(
+                                characterId = characterId,
+                                itemDefinitionId = newDarkstoneDefId,
+                                quantity = 1,
+                                notes = "From character's dark stone supply",
+                                containerId = containerId
+                            )
+                        )
+                    } else {
+                        // Use existing dark stone definition
+                        repository.insertItem(
+                            Item(
+                                characterId = characterId,
+                                itemDefinitionId = darkstoneItemDef.id,
+                                quantity = 1,
+                                notes = "From character's dark stone supply",
+                                containerId = containerId
+                            )
+                        )
+                    }
+                }
+
+                // Reduce character's dark stone count
+                val updatedCharacter = character.copy(darkstone = character.darkstone - 1)
+                updateCharacter(updatedCharacter)
+
+                _uiMessage.value = "Dark stone stored in container"
             }
         }
     }
+
     /**
      * Remove dark stone from container and add to character's supply
      */
@@ -656,13 +688,19 @@ class CharacterDetailViewModel(
                 return@launch
             }
 
-            // Remove the item
-            repository.deleteItem(item.item)
+            // If quantity is more than 1, reduce quantity instead of deleting
+            if (item.item.quantity > 1) {
+                val updatedItem = item.item.copy(quantity = item.item.quantity - 1)
+                repository.updateItem(updatedItem)
+            } else {
+                // Remove the item if quantity is 1
+                repository.deleteItem(item.item)
+            }
 
             // Increase character's dark stone count
             characterData.value.character?.let { character ->
                 val updatedCharacter = character.copy(
-                    darkstone = character.darkstone + (item.item.quantity)
+                    darkstone = character.darkstone + 1
                 )
                 updateCharacter(updatedCharacter)
             }

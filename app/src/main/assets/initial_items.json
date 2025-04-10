@@ -129,20 +129,6 @@
     "upgradeSlots": 0
   },
   {
-    "name": "Cavalry Saber",
-    "description": "A curved sword used by cavalry officers, effective in melee combat.",
-    "type": "Weapon",
-    "keywords": ["Melee", "Sword"],
-    "statModifiers": {
-      "Combat": 1,
-      "Initiative": 1
-    },
-    "anvilWeight": 1,
-    "equipSlot": "Hand",
-    "goldValue": 85,
-    "upgradeSlots": 1
-  },
-  {
     "name": "Bag of Gold",
     "description": "A sizable bag of gold coins from a lucky find.",
     "type": "Treasure",

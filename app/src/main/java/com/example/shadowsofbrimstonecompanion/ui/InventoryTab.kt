@@ -3,6 +3,7 @@ package com.example.shadowsofbrimstonecompanion.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,6 +17,15 @@ import androidx.compose.ui.unit.dp
 import com.example.shadowsofbrimstonecompanion.data.entity.Item
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemDefinition
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemWithDefinition
+
+/**
+ * Represents a group of items with the same item definition
+ */
+data class GroupedItem(
+    val definition: ItemDefinition,
+    val item: Item,
+    val individualItemIds: List<Long>
+)
 
 @Composable
 fun InventoryTab(
@@ -101,16 +111,39 @@ fun InventoryTab(
                 Text("No items in inventory")
             }
         } else {
+            // Group items by definition ID
+            val groupedItems = itemsWithDefinitions
+                .groupBy { it.item.itemDefinitionId }
+                .map { (defId, items) ->
+                    // Find the first item and its definition
+                    val firstItem = items.first()
+                    // Calculate total quantity across all items of this type
+                    val totalQuantity = items.sumOf { it.item.quantity }
+                    // Create a grouped representation
+                    GroupedItem(
+                        definition = firstItem.definition,
+                        // Use the first item as representative, with updated quantity
+                        item = firstItem.item.copy(quantity = totalQuantity),
+                        // Keep track of all individual item IDs
+                        individualItemIds = items.map { it.item.id }
+                    )
+                }
+                .sortedBy { it.definition.name } // Sort by item name for consistency
+
             LazyColumn {
-                items(itemsWithDefinitions) { itemWithDef ->
+                items(groupedItems) { groupedItem ->
                     ItemCard(
-                        itemWithDefinition = itemWithDef,
-                        onToggleEquipped = { onToggleEquipped(itemWithDef.item) },
-                        onDelete = { onDeleteItem(itemWithDef.item) },
-                        onSell = { percentage -> onSellItem(itemWithDef.item, percentage) },
-                        onUseAsContainer = if (onUseAsContainer != null && itemWithDef.definition.isContainer) {
-                            { onUseAsContainer(itemWithDef.item) }
-                        } else null
+                        itemWithDefinition = ItemWithDefinition(
+                            item = groupedItem.item,
+                            definition = groupedItem.definition
+                        ),
+                        onToggleEquipped = { onToggleEquipped(groupedItem.item) },
+                        onDelete = { onDeleteItem(groupedItem.item) },
+                        onSell = { percentage -> onSellItem(groupedItem.item, percentage) },
+                        onUseAsContainer = if (onUseAsContainer != null && groupedItem.definition.isContainer) {
+                            { onUseAsContainer(groupedItem.item) }
+                        } else null,
+                        isStackedItem = groupedItem.individualItemIds.size > 1
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -138,7 +171,8 @@ fun ItemCard(
     onToggleEquipped: () -> Unit,
     onDelete: () -> Unit,
     onSell: (Int) -> Unit,
-    onUseAsContainer: (() -> Unit)? = null  // Added parameter for container functionality
+    onUseAsContainer: (() -> Unit)? = null,  // Added parameter for container functionality
+    isStackedItem: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showSellDialog by remember { mutableStateOf(false) }
@@ -147,13 +181,16 @@ fun ItemCard(
 
     // Check if this item can be a container
     val isContainerCapable = definition.isContainer
+    val isDarkstone = definition.type == "Dark Stone"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (item.equipped)
-                MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = when {
+                item.equipped -> MaterialTheme.colorScheme.primaryContainer
+                isDarkstone -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -163,28 +200,61 @@ fun ItemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = definition.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Add dark stone icon if applicable
+                        if (isDarkstone) {
+                            Text(
+                                "🌑 ", // Dark stone emoji
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+
+                        Text(
+                            text = definition.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // Add quantity badge for stacked items
+                        if (item.quantity > 1 || isStackedItem) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                modifier = Modifier.padding(4.dp)
+                            ) {
+                                Text(
+                                    text = "×${item.quantity}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
                     Text(
                         text = "Type: ${definition.type}",
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    if (item.quantity > 1) {
-                        Text(
-                            text = "Quantity: ${item.quantity}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
 
-                    // Add container indicator if applicable
+                    // Show container indicator if applicable
                     if (isContainerCapable) {
                         Text(
                             text = "Container",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    // Show if dark stone is unprotected
+                    if (isDarkstone) {
+                        Text(
+                            text = "Unprotected - may cause corruption",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -259,7 +329,8 @@ fun ItemCard(
 
                 if (definition.goldValue > 0) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Value: ${definition.goldValue} gold")
+                    Text("Value: ${definition.goldValue} gold" +
+                            if (item.quantity > 1) " (${definition.goldValue * item.quantity} total)" else "")
                 }
 
                 if (item.notes.isNotBlank()) {

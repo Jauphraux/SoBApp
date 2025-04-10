@@ -89,7 +89,6 @@ fun CharacterDetailScreen(
             ContainerScreen(
                 containers = storageData.containers,
                 allItems = storageData.allItems,
-                looseItems = storageData.looseItems,
                 onMoveItem = { itemId, containerId -> viewModel.moveItemToContainer(itemId, containerId) },
                 onClose = { viewModel.toggleContainerScreen(false) },
                 onStoreDarkstone = { containerId -> viewModel.storeDarkstoneInContainer(containerId) },

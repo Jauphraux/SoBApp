@@ -42,71 +42,47 @@ class BrimstoneApplication : Application() {
     private fun initializeAppData() {
         val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         applicationScope.launch {
-            // Check if class definitions need to be loaded
-            if (repository.getClassDefinitionCount() == 0) {
+            try {
+                // Always reload class definitions from JSON
                 loadInitialClassDefinitions()
-            }
 
-            // Check if item definitions need to be loaded
-            if (repository.getItemDefinitionCount() == 0) {
+                // Always reload item definitions from JSON
                 loadInitialItemDefinitions()
-            }
 
-            // Create default stash if none exists
-            createDefaultStashIfNeeded(applicationScope)
+                // Create default stash if none exists
+                createDefaultStashIfNeeded(applicationScope)
+            } catch (e: Exception) {
+                Log.e("BrimstoneApp", "Error initializing app data", e)
+            }
         }
     }
 
     private fun createDefaultStashIfNeeded(applicationScope: CoroutineScope) {
         applicationScope.launch {
             try {
-                // Check if any stashes exist
+                // Check if Town Storage already exists
                 val stashes = repository.getStashes().first()
+                val townStorageExists = stashes.any { it.container.name == "Town Storage" }
 
-                if (stashes.isEmpty()) {
-                    Log.d("BrimstoneApp", "No stashes found, creating default stash")
+                if (!townStorageExists) {
+                    Log.d("BrimstoneApp", "No Town Storage found, creating system container")
 
-                    // First create an ItemDefinition
-                    val stashItemDef = ItemDefinition(
-                        name = "Town Storage",
-                        description = "A secure location to store items in town",
-                        type = "Stash",
-                        keywords = listOf("Container", "Storage"),
-                        isContainer = true,
-                        containerCapacity = 20,
-                        containerAcceptedTypes = emptyList() // Accepts everything
-                    )
-
-                    // Insert the ItemDefinition and get its ID
-                    val itemDefId = repository.insertItemDefinition(stashItemDef)
-                    Log.d("BrimstoneApp", "Created stash item definition with ID: $itemDefId")
-
-                    // Now create a virtual Item entry - this is critical for maintaining foreign key relationships
-                    val virtualItemId = repository.insertItem(
-                        Item(
-                            characterId = -1, // Use a special value like -1 to indicate system items
-                            itemDefinitionId = itemDefId,
-                            quantity = 1,
-                            notes = "System generated stash"
-                        )
-                    )
-                    Log.d("BrimstoneApp", "Created virtual item with ID: $virtualItemId")
-
-                    // Only now create the Container using the Item ID
+                    // Create the Town Storage as a system container
                     repository.createContainer(
-                        itemId = virtualItemId,
+                        itemId = null,  // No associated item
                         maxCapacity = 20,
                         acceptedItemTypes = emptyList(),
                         isStash = true,
-                        name = "Town Storage"
+                        name = "Town Storage",
+                        isSystemContainer = true
                     )
 
-                    Log.d("BrimstoneApp", "Created default town storage stash")
+                    Log.d("BrimstoneApp", "Created Town Storage system container")
                 } else {
-                    Log.d("BrimstoneApp", "Stashes already exist. Skipping default stash creation.")
+                    Log.d("BrimstoneApp", "Town Storage already exists. Skipping creation.")
                 }
             } catch (e: Exception) {
-                Log.e("BrimstoneApp", "Error creating default stash", e)
+                Log.e("BrimstoneApp", "Error creating Town Storage", e)
             }
         }
     }
@@ -118,6 +94,9 @@ class BrimstoneApplication : Application() {
             val gson = Gson()
             val classesType = object : TypeToken<List<CharacterClassDefinition>>() {}.type
             val classDefinitions: List<CharacterClassDefinition> = gson.fromJson(jsonString, classesType)
+
+            // Clear existing class definitions
+            repository.deleteAllClassDefinitions()
 
             // Insert the classes into the database
             repository.insertAllClassDefinitions(classDefinitions)
@@ -135,6 +114,9 @@ class BrimstoneApplication : Application() {
             val gson = Gson()
             val itemsType = object : TypeToken<List<ItemDefinition>>() {}.type
             val itemDefinitions: List<ItemDefinition> = gson.fromJson(jsonString, itemsType)
+
+            // Clear existing item definitions
+            repository.deleteAllItemDefinitions()
 
             // Insert the items into the database
             repository.insertAllItemDefinitions(itemDefinitions)

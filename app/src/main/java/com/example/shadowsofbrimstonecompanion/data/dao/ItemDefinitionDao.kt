@@ -20,6 +20,9 @@ interface ItemDefinitionDao {
     @Delete
     suspend fun delete(item: ItemDefinition)
 
+    @Query("DELETE FROM item_definitions")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM item_definitions ORDER BY name ASC")
     fun getAllItemDefinitions(): Flow<List<ItemDefinition>>
 
