@@ -5,11 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +25,7 @@ fun InventoryTab(
     onDeleteItem: (Item) -> Unit,
     onAddItem: (Long, Int, String) -> Unit,
     onSellItem: (Item, Int) -> Unit,
+    onUseAsContainer: ((Item) -> Unit)? = null,  // Added parameter for container functionality
     currentEncumbrance: Int = 0,
     maxEncumbrance: Int = 0,
     errorMessage: String? = null,
@@ -110,7 +107,10 @@ fun InventoryTab(
                         itemWithDefinition = itemWithDef,
                         onToggleEquipped = { onToggleEquipped(itemWithDef.item) },
                         onDelete = { onDeleteItem(itemWithDef.item) },
-                        onSell = { percentage -> onSellItem(itemWithDef.item, percentage) }
+                        onSell = { percentage -> onSellItem(itemWithDef.item, percentage) },
+                        onUseAsContainer = if (onUseAsContainer != null && itemWithDef.definition.isContainer) {
+                            { onUseAsContainer(itemWithDef.item) }
+                        } else null
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -137,12 +137,16 @@ fun ItemCard(
     itemWithDefinition: ItemWithDefinition,
     onToggleEquipped: () -> Unit,
     onDelete: () -> Unit,
-    onSell: (Int) -> Unit
+    onSell: (Int) -> Unit,
+    onUseAsContainer: (() -> Unit)? = null  // Added parameter for container functionality
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showSellDialog by remember { mutableStateOf(false) }
     val item = itemWithDefinition.item
     val definition = itemWithDefinition.definition
+
+    // Check if this item can be a container
+    val isContainerCapable = definition.isContainer
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -172,6 +176,15 @@ fun ItemCard(
                         Text(
                             text = "Quantity: ${item.quantity}",
                             style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    // Add container indicator if applicable
+                    if (isContainerCapable) {
+                        Text(
+                            text = "Container",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -252,6 +265,30 @@ fun ItemCard(
                 if (item.notes.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Notes: ${item.notes}")
+                }
+
+                // Add Container section if applicable
+                if (isContainerCapable && onUseAsContainer != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Button(
+                            onClick = onUseAsContainer,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Icon(
+                                Icons.Default.Inventory2,
+                                contentDescription = "Use as Container"
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Use as Container")
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -383,6 +420,21 @@ fun AddItemDialog(
                                     if (selectedItem.equipSlot == "Two-Handed") " (requires both hands)" else "",
                             fontWeight = FontWeight.Medium
                         )
+                    }
+
+                    // Show container info if applicable
+                    if (selectedItem.isContainer) {
+                        Text(
+                            text = "Container: Capacity ${selectedItem.containerCapacity} items",
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        if (selectedItem.containerAcceptedTypes.isNotEmpty()) {
+                            Text(
+                                text = "Accepts: ${selectedItem.containerAcceptedTypes.joinToString(", ")}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
 
                     if (selectedItem.description.isNotBlank()) {

@@ -1,5 +1,6 @@
 package com.example.shadowsofbrimstonecompanion.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,10 +29,20 @@ fun ContainerScreen(
     allItems: List<ItemWithDefinition>,
     looseItems: List<ItemWithDefinition>,
     onMoveItem: (Long, Long?) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onStoreDarkstone: ((Long) -> Unit)? = null,
+    characterDarkstone: Int = 0
 ) {
     var selectedContainer by remember { mutableStateOf<ContainerWithItems?>(null) }
     var showAddItemDialog by remember { mutableStateOf(false) }
+
+    // Auto-select first container if none is selected and containers exist
+    LaunchedEffect(containers) {
+        if (selectedContainer == null && containers.isNotEmpty()) {
+            Log.d("ContainerScreen", "Auto-selecting first container: ${containers.first().container.name}")
+            selectedContainer = containers.first()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -76,7 +87,12 @@ fun ContainerScreen(
                         ContainerListItem(
                             containerWithItems = containerWithItems,
                             isSelected = containerWithItems == selectedContainer,
-                            onClick = { selectedContainer = containerWithItems }
+                            onClick = {
+                                Log.d("ContainerScreen", "Container selected: ${containerWithItems.container.name}")
+                                selectedContainer = containerWithItems
+                            },
+                            onStoreDarkstone = onStoreDarkstone,
+                            characterDarkstone = characterDarkstone
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -111,7 +127,8 @@ fun ContainerScreen(
                                     ContainerItemCard(
                                         itemName = itemDef.name,
                                         description = itemDef.description,
-                                        onRemove = { onMoveItem(item.id, null) }
+                                        onRemove = { onMoveItem(item.id, null) },
+                                        isDarkstone = itemDef.type == "Dark Stone"
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
@@ -175,7 +192,8 @@ fun ContainerScreen(
                                     onMoveItem(itemWithDef.item.id, selectedContainer!!.container.itemId)
                                 }
                             },
-                            canMove = selectedContainer != null
+                            canMove = selectedContainer != null,
+                            isDarkstone = itemWithDef.definition.type == "Dark Stone"
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -202,10 +220,16 @@ fun ContainerScreen(
 fun ContainerListItem(
     containerWithItems: ContainerWithItems,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onStoreDarkstone: ((Long) -> Unit)? = null,
+    characterDarkstone: Int = 0
 ) {
     val container = containerWithItems.container
     val items = containerWithItems.items
+
+    // Check if container accepts dark stone
+    val acceptsDarkstone = container.acceptedItemTypes.isEmpty() ||
+            container.acceptedItemTypes.contains("Dark Stone")
 
     Card(
         modifier = Modifier
@@ -250,6 +274,21 @@ fun ContainerListItem(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+
+            // Add Dark Stone storage button if applicable - only show when there's darkstone available
+            if (acceptsDarkstone && onStoreDarkstone != null && characterDarkstone > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { onStoreDarkstone(container.itemId) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Text("Store Dark Stone in ${container.name ?: "Container"} (${characterDarkstone} available)")
+                }
+            }
         }
     }
 }
@@ -258,12 +297,16 @@ fun ContainerListItem(
 fun ContainerItemCard(
     itemName: String,
     description: String,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    isDarkstone: Boolean = false
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (isDarkstone)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
@@ -274,17 +317,33 @@ fun ContainerItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = itemName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isDarkstone) {
+                        Text(
+                            "🌑 ", // Dark stone emoji indicator
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    Text(
+                        text = itemName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 2
                 )
+
+                if (isDarkstone) {
+                    Text(
+                        text = "Protected from corruption",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             IconButton(onClick = onRemove) {
@@ -303,12 +362,16 @@ fun LooseItemCard(
     itemName: String,
     description: String,
     onMove: () -> Unit,
-    canMove: Boolean
+    canMove: Boolean,
+    isDarkstone: Boolean = false
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (isDarkstone)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
@@ -319,17 +382,33 @@ fun LooseItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = itemName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isDarkstone) {
+                        Text(
+                            "🌑 ", // Dark stone emoji indicator
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    Text(
+                        text = itemName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 2
                 )
+
+                if (isDarkstone) {
+                    Text(
+                        text = "Unprotected - may cause corruption",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
 
             Button(
@@ -427,7 +506,8 @@ fun AddItemToContainerDialog(
                             ItemSelectionCard(
                                 itemName = itemWithDef.definition.name,
                                 description = itemWithDef.definition.description,
-                                onClick = { onAddItem(itemWithDef.item.id) }
+                                onClick = { onAddItem(itemWithDef.item.id) },
+                                isDarkstone = itemWithDef.definition.type == "Dark Stone"
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -453,30 +533,51 @@ fun AddItemToContainerDialog(
 fun ItemSelectionCard(
     itemName: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isDarkstone: Boolean = false
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (isDarkstone)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = itemName,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isDarkstone) {
+                    Text(
+                        "🌑 ", // Dark stone emoji indicator
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                }
+                Text(
+                    text = itemName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2
             )
+
+            if (isDarkstone) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Storing will protect from corruption",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -492,6 +593,13 @@ fun StashScreen(
 ) {
     var selectedStash by remember { mutableStateOf<ContainerWithItems?>(null) }
     var showAddStashDialog by remember { mutableStateOf(false) }
+
+    // Auto-select first stash if available and none selected
+    LaunchedEffect(stashes) {
+        if (selectedStash == null && stashes.isNotEmpty()) {
+            selectedStash = stashes.first()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -576,7 +684,8 @@ fun StashScreen(
                                     ContainerItemCard(
                                         itemName = itemDef.name,
                                         description = itemDef.description,
-                                        onRemove = { onMoveItem(item.id, null) }
+                                        onRemove = { onMoveItem(item.id, null) },
+                                        isDarkstone = itemDef.type == "Dark Stone"
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }

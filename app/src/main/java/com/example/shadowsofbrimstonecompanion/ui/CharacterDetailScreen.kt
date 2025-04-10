@@ -91,7 +91,9 @@ fun CharacterDetailScreen(
                 allItems = storageData.allItems,
                 looseItems = storageData.looseItems,
                 onMoveItem = { itemId, containerId -> viewModel.moveItemToContainer(itemId, containerId) },
-                onClose = { viewModel.toggleContainerScreen(false) }
+                onClose = { viewModel.toggleContainerScreen(false) },
+                onStoreDarkstone = { containerId -> viewModel.storeDarkstoneInContainer(containerId) },
+                characterDarkstone = state.character?.darkstone ?: 0
             )
         } else {
             if (state.isLoading) {
@@ -171,6 +173,7 @@ fun CharacterDetailScreen(
                                         viewModel.addItem(itemDefId, quantity, notes)
                                     },
                                     onSellItem = { item, percentage -> viewModel.sellItem(item, percentage) },
+                                    onUseAsContainer = { item -> viewModel.useItemAsContainer(item) }, // Added this line
                                     currentEncumbrance = viewModel.calculateTotalAnvilWeight(),
                                     maxEncumbrance = state.attributes?.strength?.plus(5) ?: 0,
                                     errorMessage = viewModel.uiMessage.collectAsState().value,
@@ -387,12 +390,31 @@ fun CharacterTab(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Gold
+                Text("Gold: ${character.gold}")
+
+                // Dark Stone controls - adding this section
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Gold: ${character.gold}")
-                    Text("Darkstone: ${character.darkstone}")
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Dark Stone: ${character.darkstone}")
+                        val storedDarkstone = viewModel.getStoredDarkstoneCount()
+                        if (storedDarkstone > 0) {
+                            Text(
+                                "($storedDarkstone stored in containers)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    IconButton(onClick = { viewModel.decreaseDarkstone() }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease Dark Stone")
+                    }
+                    IconButton(onClick = { viewModel.increaseDarkstone() }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase Dark Stone")
+                    }
                 }
             }
         }

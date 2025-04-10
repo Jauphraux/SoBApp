@@ -468,6 +468,209 @@ class CharacterDetailViewModel(
         }
     }
 
+    /**
+     * Converts an item with container properties into an actual usable container
+     * @param item The item to convert into a container
+     */
+    fun useItemAsContainer(item: Item) {
+        viewModelScope.launch {
+            // Find the item definition to check container properties
+            val itemWithDef = storageData.value.allItems.find { it.item.id == item.id }
+
+            if (itemWithDef != null && itemWithDef.definition.isContainer) {
+                // Check if container already exists for this item
+                val existingContainers = storageData.value.containers
+                val alreadyContainer = existingContainers.any { it.container.itemId == item.id }
+
+                if (!alreadyContainer) {
+                    // Create the container entry for this item
+                    repository.createContainer(
+                        itemId = item.id,
+                        maxCapacity = itemWithDef.definition.containerCapacity,
+                        acceptedItemTypes = itemWithDef.definition.containerAcceptedTypes,
+                        isStash = false,
+                        name = itemWithDef.definition.name
+                    )
+
+                    _uiMessage.value = "${itemWithDef.definition.name} is now usable as a container"
+                } else {
+                    _uiMessage.value = "This item is already set up as a container"
+                }
+            } else {
+                _uiMessage.value = "This item cannot be used as a container"
+            }
+        }
+    }
+
+    // Add these functions to CharacterDetailViewModel.kt
+
+    /**
+     * Increases dark stone count by 1
+     */
+    fun increaseDarkstone() {
+        characterData.value.character?.let { character ->
+            val updatedCharacter = character.copy(darkstone = character.darkstone + 1)
+            updateCharacter(updatedCharacter)
+        }
+    }
+
+    /**
+     * Decreases dark stone count by 1, not going below 0
+     */
+    fun decreaseDarkstone() {
+        characterData.value.character?.let { character ->
+            if (character.darkstone > 0) {
+                val updatedCharacter = character.copy(darkstone = character.darkstone - 1)
+                updateCharacter(updatedCharacter)
+            }
+        }
+    }
+
+    /**
+     * Gets count of dark stone stored in containers
+     */
+    fun getStoredDarkstoneCount(): Int {
+        val darkstoneContainers = storageData.value.containers.filter { container ->
+            container.container.acceptedItemTypes.contains("Dark Stone")
+        }
+
+        val storedCount = darkstoneContainers.sumOf { container ->
+            container.items.count { item ->
+                val definition = storageData.value.allItems
+                    .find { it.item.id == item.id }?.definition
+                definition?.type == "Dark Stone"
+            }
+        }
+
+        return storedCount
+    }
+
+    /**
+     * Store dark stone in an appropriate container
+     */
+    fun storeDarkstoneInContainer(containerId: Long) {
+        viewModelScope.launch {
+            characterData.value.character?.let { character ->
+                if (character.darkstone <= 0) {
+                    _uiMessage.value = "No dark stone to store"
+                    return@launch
+                }
+
+                // Check if container accepts dark stone
+                val container = storageData.value.containers.find {
+                    it.container.itemId == containerId
+                }
+
+                if (container == null) {
+                    _uiMessage.value = "Container not found"
+                    return@launch
+                }
+
+                val acceptsDarkstone = container.container.acceptedItemTypes.isEmpty() ||
+                        container.container.acceptedItemTypes.contains("Dark Stone")
+
+                if (!acceptsDarkstone) {
+                    _uiMessage.value = "This container cannot store dark stone"
+                    return@launch
+                }
+
+                // Check container capacity
+                if (container.items.size >= container.container.maxCapacity) {
+                    _uiMessage.value = "Container is full"
+                    return@launch
+                }
+
+                // Create a dark stone item
+                val darkstoneItemDef = storageData.value.allItems.find { it.definition.type == "Dark Stone" }?.definition
+
+
+                if (darkstoneItemDef == null) {
+                    // Create a dark stone item definition if none exists
+                    val newDarkstoneDefId = repository.insertItemDefinition(
+                        ItemDefinition(
+                            name = "Dark Stone",
+                            description = "A piece of mysterious otherworldly stone that radiates corruption.",
+                            type = "Dark Stone",
+                            keywords = listOf("Artifact", "Valuable"),
+                            anvilWeight = 0,
+                            darkStoneCount = 1,
+                            goldValue = 50
+                        )
+                    )
+
+                    // Create item
+                    val darkstoneItemId = repository.insertItem(
+                        Item(
+                            characterId = characterId,
+                            itemDefinitionId = newDarkstoneDefId,
+                            quantity = 1,
+                            notes = "From character's dark stone supply",
+                            containerId = containerId
+                        )
+                    )
+
+                    // Reduce character's dark stone count
+                    val updatedCharacter = character.copy(darkstone = character.darkstone - 1)
+                    updateCharacter(updatedCharacter)
+
+                    _uiMessage.value = "Dark stone stored in container"
+                } else {
+                    // Use existing dark stone definition
+                    val darkstoneItemId = repository.insertItem(
+                        Item(
+                            characterId = characterId,
+                            itemDefinitionId = darkstoneItemDef.id,
+                            quantity = 1,
+                            notes = "From character's dark stone supply",
+                            containerId = containerId
+                        )
+                    )
+
+                    // Reduce character's dark stone count
+                    val updatedCharacter = character.copy(darkstone = character.darkstone - 1)
+                    updateCharacter(updatedCharacter)
+
+                    _uiMessage.value = "Dark stone stored in container"
+                }
+            }
+        }
+    }
+    /**
+     * Remove dark stone from container and add to character's supply
+     */
+    fun retrieveDarkstoneFromContainer(itemId: Long) {
+        viewModelScope.launch {
+            // Get the item
+            val item = storageData.value.allItems.find { it.item.id == itemId }
+
+            if (item == null) {
+                _uiMessage.value = "Item not found"
+                return@launch
+            }
+
+            // Check if it's dark stone
+            val isDarkstone = item.definition.type == "Dark Stone"
+
+            if (!isDarkstone) {
+                _uiMessage.value = "Selected item is not dark stone"
+                return@launch
+            }
+
+            // Remove the item
+            repository.deleteItem(item.item)
+
+            // Increase character's dark stone count
+            characterData.value.character?.let { character ->
+                val updatedCharacter = character.copy(
+                    darkstone = character.darkstone + (item.item.quantity)
+                )
+                updateCharacter(updatedCharacter)
+            }
+
+            _uiMessage.value = "Dark stone added to your supply"
+        }
+    }
+
     // Function to check if an item is a container
     fun isItemContainer(itemId: Long): Boolean {
         return storageData.value.allItems.any {
