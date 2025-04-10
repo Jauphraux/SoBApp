@@ -2,15 +2,15 @@
   {
     "name": "Gunslinger",
     "description": "A quick-drawing expert marksman who excels at ranged combat.",
-    "startingHealth": 12,
-    "startingSanity": 8,
+    "startingHealth": 10,
+    "startingSanity": 12,
     "startingAttributes": {
       "Agility": 3,
-      "Cunning": 2,
+      "Cunning": 3,
       "Spirit": 2,
       "Strength": 2,
-      "Lore": 1,
-      "Luck": 2
+      "Lore": 2,
+      "Luck": 4
     },
     "imageResourceName": null
   },
@@ -62,15 +62,15 @@
   {
     "name": "Saloon Girl",
     "description": "A charming entertainer who dances around danger and heals allies with her presence.",
-    "startingHealth": 10,
-    "startingSanity": 9,
+    "startingHealth": 8,
+    "startingSanity": 14,
     "startingAttributes": {
       "Agility": 4,
       "Cunning": 3,
-      "Spirit": 2,
+      "Spirit": 3,
       "Strength": 1,
-      "Lore": 1,
-      "Luck": 2
+      "Lore": 2,
+      "Luck": 3
     },
     "imageResourceName": null
   },
