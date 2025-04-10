@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CheckCircleOutline
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -26,9 +27,50 @@ fun InventoryTab(
     allItemDefinitions: List<ItemDefinition>,
     onToggleEquipped: (Item) -> Unit,
     onDeleteItem: (Item) -> Unit,
-    onAddItem: (Long, Int, String) -> Unit
+    onAddItem: (Long, Int, String) -> Unit,
+    onSellItem: (Item, Int) -> Unit,
+    currentEncumbrance: Int = 0,
+    maxEncumbrance: Int = 0,
+    errorMessage: String? = null,
+    onErrorMessageShown: () -> Unit = {}
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+
+    // Show error message as a snackbar if present
+    var showSnackbar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(errorMessage) {
+        if (errorMessage != null) {
+            showSnackbar = true
+        }
+    }
+
+    if (showSnackbar && errorMessage != null) {
+        Snackbar(
+            modifier = Modifier.padding(16.dp),
+            action = {
+                TextButton(onClick = {
+                    showSnackbar = false
+                    onErrorMessageShown()
+                }) {
+                    Text("Dismiss")
+                }
+            },
+            dismissAction = {
+                IconButton(onClick = {
+                    showSnackbar = false
+                    onErrorMessageShown()
+                }) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Dismiss"
+                    )
+                }
+            }
+        ) {
+            Text(errorMessage)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -67,7 +109,8 @@ fun InventoryTab(
                     ItemCard(
                         itemWithDefinition = itemWithDef,
                         onToggleEquipped = { onToggleEquipped(itemWithDef.item) },
-                        onDelete = { onDeleteItem(itemWithDef.item) }
+                        onDelete = { onDeleteItem(itemWithDef.item) },
+                        onSell = { percentage -> onSellItem(itemWithDef.item, percentage) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -82,7 +125,9 @@ fun InventoryTab(
             onAddItem = { itemDefId, quantity, notes ->
                 onAddItem(itemDefId, quantity, notes)
                 showAddDialog = false
-            }
+            },
+            currentEncumbrance = currentEncumbrance,
+            maxEncumbrance = maxEncumbrance
         )
     }
 }
@@ -91,9 +136,11 @@ fun InventoryTab(
 fun ItemCard(
     itemWithDefinition: ItemWithDefinition,
     onToggleEquipped: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onSell: (Int) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showSellDialog by remember { mutableStateOf(false) }
     val item = itemWithDefinition.item
     val definition = itemWithDefinition.definition
 
@@ -179,6 +226,24 @@ fun ItemCard(
                     Text("Keywords: ${definition.keywords.joinToString()}")
                 }
 
+                // Add this code to show anvil weight
+                if (definition.anvilWeight > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Weight: ")
+                        // Display anvil symbols based on weight
+                        repeat(definition.anvilWeight) {
+                            Text("⚒️", // Anvil emoji
+                                modifier = Modifier.padding(horizontal = 2.dp))
+                        }
+                        // Show total weight if quantity > 1
+                        if (item.quantity > 1) {
+                            Text(" × ${item.quantity} = ${definition.anvilWeight * item.quantity} total",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
                 if (definition.goldValue > 0) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Value: ${definition.goldValue} gold")
@@ -191,12 +256,23 @@ fun ItemCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Only show delete button if it's not a personal item
+                // Only show buttons if it's not a personal item
                 if (!definition.isPersonalItem) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
+                        TextButton(
+                            onClick = { showSellDialog = true },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("Sell")
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         TextButton(
                             onClick = onDelete,
                             colors = ButtonDefaults.textButtonColors(
@@ -210,6 +286,18 @@ fun ItemCard(
             }
         }
     }
+
+    if (showSellDialog) {
+        SellItemDialog(
+            item = item,
+            definition = definition,
+            onDismiss = { showSellDialog = false },
+            onSell = { percentage ->
+                onSell(percentage)
+                showSellDialog = false
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -217,7 +305,9 @@ fun ItemCard(
 fun AddItemDialog(
     itemDefinitions: List<ItemDefinition>,
     onDismiss: () -> Unit,
-    onAddItem: (Long, Int, String) -> Unit
+    onAddItem: (Long, Int, String) -> Unit,
+    currentEncumbrance: Int = 0,
+    maxEncumbrance: Int = 0
 ) {
     var selectedItemIndex by remember { mutableStateOf(0) }
     var quantity by remember { mutableStateOf("1") }
@@ -286,6 +376,15 @@ fun AddItemDialog(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Type: ${selectedItem.type}")
 
+                    // Add equipment slot information
+                    if (selectedItem.equipSlot != null) {
+                        Text(
+                            text = "Equip Slot: ${selectedItem.equipSlot}" +
+                                    if (selectedItem.equipSlot == "Two-Handed") " (requires both hands)" else "",
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
                     if (selectedItem.description.isNotBlank()) {
                         Text(selectedItem.description,
                             style = MaterialTheme.typography.bodySmall,
@@ -315,6 +414,29 @@ fun AddItemDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth()
                         )
+
+                        // Add this code to show encumbrance warning
+                        if (selectedItem.anvilWeight > 0 && maxEncumbrance > 0) {
+                            val quantityNum = quantity.toIntOrNull() ?: 0
+                            val additionalWeight = selectedItem.anvilWeight * quantityNum
+                            val newTotalWeight = currentEncumbrance + additionalWeight
+
+                            if (newTotalWeight > maxEncumbrance) {
+                                Text(
+                                    "Warning: Adding this will make you overencumbered! " +
+                                            "($newTotalWeight/$maxEncumbrance anvils)",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            } else if (additionalWeight > 0) {
+                                Text(
+                                    "Encumbrance after adding: $newTotalWeight/$maxEncumbrance anvils",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
                     }
 
                     // Notes field
@@ -351,5 +473,64 @@ fun AddItemDialog(
                 Text("Cancel")
             }
         }
+    )
+}
+
+@Composable
+fun SellItemDialog(
+    item: Item,
+    definition: ItemDefinition,
+    onDismiss: () -> Unit,
+    onSell: (Int) -> Unit
+) {
+    val itemValue = definition.goldValue * item.quantity
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Sell Item") },
+        text = {
+            Column {
+                Text(
+                    "Item: ${definition.name}" +
+                            if (item.quantity > 1) " (${item.quantity})" else ""
+                )
+
+                Text("Base Value: ${definition.goldValue} gold per item")
+
+                if (item.quantity > 1) {
+                    Text("Total Value: $itemValue gold")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Select how much to sell for:")
+
+                // Move buttons here inside the content
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(onClick = { onSell(0) }) {
+                        Text("0%\n(0 gold)")
+                    }
+
+                    Button(onClick = { onSell(50) }) {
+                        Text("50%\n(${itemValue / 2} gold)")
+                    }
+
+                    Button(onClick = { onSell(100) }) {
+                        Text("100%\n($itemValue gold)")
+                    }
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        confirmButton = { }
     )
 }

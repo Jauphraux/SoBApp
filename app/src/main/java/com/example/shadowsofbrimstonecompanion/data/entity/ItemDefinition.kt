@@ -1,5 +1,3 @@
-// app/src/main/java/com/example/shadowsofbrimstonecompanion/data/entity/ItemDefinition.kt
-
 package com.example.shadowsofbrimstonecompanion.data.entity
 
 import androidx.room.Entity
@@ -14,7 +12,7 @@ data class ItemDefinition(
     val type: String,
     val keywords: List<String> = emptyList(),
     val statModifiers: Map<String, Int> = emptyMap(),
-    val weight: Int = 0,
+    val anvilWeight: Int = 0, // Number of anvil symbols (0 = no weight)
     val darkStoneCount: Int = 0,
     val equipSlot: String? = null,
     val usageEffect: String? = null,

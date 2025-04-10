@@ -51,7 +51,7 @@ fun CharacterDetailScreen(
     val attributes = state.attributes
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Character", "Inventory", "Skills")
+    val tabs = listOf("Character", "Inventory", "Equipment", "Skills")
 
     Scaffold(
         topBar = {
@@ -124,7 +124,8 @@ fun CharacterDetailScreen(
                             onSanityIncrease = { viewModel.increaseSanity() },
                             onSanityDecrease = { viewModel.decreaseSanity() },
                             onAddXP = { viewModel.addExperience(10) },
-                            onLevelUp = { viewModel.levelUp() }
+                            onLevelUp = { viewModel.levelUp() },
+                            viewModel = viewModel
                         )
                     }
                     1 -> InventoryTab(
@@ -134,9 +135,21 @@ fun CharacterDetailScreen(
                         onDeleteItem = { viewModel.deleteItem(it) },
                         onAddItem = { itemDefId, quantity, notes ->
                             viewModel.addItem(itemDefId, quantity, notes)
-                        }
+                        },
+                        onSellItem = { item, percentage -> viewModel.sellItem(item, percentage) },
+                        currentEncumbrance = viewModel.calculateTotalAnvilWeight(),
+                        maxEncumbrance = state.attributes?.strength?.plus(5) ?: 0,
+                        errorMessage = viewModel.uiMessage.collectAsState().value,
+                        onErrorMessageShown = { viewModel.clearUiMessage() }
                     )
-                    2 -> SkillsTab(
+                    2 -> EquipmentScreen(
+                        itemsWithDefinitions = state.itemsWithDefinitions,
+                        allItems = state.itemsWithDefinitions,
+                        onToggleEquipped = { viewModel.toggleItemEquipped(it) },
+                        errorMessage = viewModel.uiMessage.collectAsState().value,
+                        onErrorMessageShown = { viewModel.clearUiMessage() }
+                    )
+                    3 -> SkillsTab(
                         skills = state.skills,
                         onUpgradeSkill = { viewModel.upgradeSkill(it) },
                         onDeleteSkill = { viewModel.deleteSkill(it) },
@@ -160,7 +173,8 @@ fun CharacterTab(
     onSanityIncrease: () -> Unit,
     onSanityDecrease: () -> Unit,
     onAddXP: () -> Unit,
-    onLevelUp: () -> Unit
+    onLevelUp: () -> Unit,
+    viewModel: CharacterDetailViewModel
 ) {
     if (character == null || attributes == null) return
 
@@ -234,7 +248,8 @@ fun CharacterTab(
                     progress = { character.sanity.toFloat() / character.maxSanity },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp),
+                        .height(8.dp)
+                        .padding(vertical = 2.dp),
                     color = MaterialTheme.colorScheme.tertiary
                 )
 
@@ -341,6 +356,63 @@ fun CharacterTab(
                 ) {
                     Text("Gold: ${character.gold}")
                     Text("Darkstone: ${character.darkstone}")
+                }
+            }
+        }
+
+        // Add this new Card for Encumbrance
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "Encumbrance",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Get current encumbrance from viewModel
+                val currentWeight = viewModel.calculateTotalAnvilWeight()
+                val maxWeight = attributes.strength + 5
+
+                // Display current/max weight
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Carrying: $currentWeight / $maxWeight anvils")
+                }
+
+                // Encumbrance progress bar
+                LinearProgressIndicator(
+                    progress = { currentWeight.toFloat() / maxWeight.toFloat() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .padding(vertical = 2.dp),
+                    color = when {
+                        currentWeight > maxWeight -> MaterialTheme.colorScheme.error
+                        currentWeight >= maxWeight * 0.8f -> MaterialTheme.colorScheme.tertiary
+                        else -> MaterialTheme.colorScheme.primary
+                    }
+                )
+
+                // Warning message if overencumbered
+                if (currentWeight > maxWeight) {
+                    Text(
+                        "Overencumbered! You may suffer penalties.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                 }
             }
         }

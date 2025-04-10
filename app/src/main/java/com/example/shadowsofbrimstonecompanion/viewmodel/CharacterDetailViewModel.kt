@@ -12,8 +12,10 @@ import com.example.shadowsofbrimstonecompanion.data.entity.ItemDefinition
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemWithDefinition
 import com.example.shadowsofbrimstonecompanion.data.entity.Skill
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -58,6 +60,15 @@ class CharacterDetailViewModel(
         initialValue = CharacterDetailState()
     )
 
+    // State flow for UI messages
+    private val _uiMessage = MutableStateFlow<String?>(null)
+    val uiMessage: StateFlow<String?> = _uiMessage.asStateFlow()
+
+    // Function to clear UI messages
+    fun clearUiMessage() {
+        _uiMessage.value = null
+    }
+
     // State class to hold all character detail data
     data class CharacterDetailState(
         val character: Character? = null,
@@ -87,6 +98,16 @@ class CharacterDetailViewModel(
         }
 
         return modifiers
+    }
+
+    /**
+     * Calculates the total anvil weight of all items carried by the character
+     * @return Total number of anvil symbols
+     */
+    fun calculateTotalAnvilWeight(): Int {
+        return characterData.value.itemsWithDefinitions.sumOf { itemWithDef ->
+            itemWithDef.definition.anvilWeight * itemWithDef.item.quantity
+        }
     }
 
     // Actions
@@ -169,7 +190,77 @@ class CharacterDetailViewModel(
 
     fun toggleItemEquipped(item: Item) {
         viewModelScope.launch {
-            val updatedItem = item.copy(equipped = !item.equipped)
+            // Get the item's definition to check its equipment slot
+            val itemDef = characterData.value.itemsWithDefinitions
+                .find { it.item.id == item.id }?.definition
+
+            if (itemDef?.equipSlot == null) {
+                // Item has no equip slot, just update its state
+                val updatedItem = item.copy(equipped = !item.equipped)
+                repository.updateItem(updatedItem)
+                return@launch
+            }
+
+            // Handling unequipping (always allowed)
+            if (item.equipped) {
+                val updatedItem = item.copy(equipped = false)
+                repository.updateItem(updatedItem)
+                return@launch
+            }
+
+            // Handling equipping - need to check slot availability
+            val equippedItems = characterData.value.itemsWithDefinitions
+                .filter { it.item.equipped }
+
+            // Special handling for "Two-Handed" items
+            if (itemDef.equipSlot == "Two-Handed") {
+                // Check if any hand slot is occupied
+                val handSlotOccupied = equippedItems.any {
+                    it.definition.equipSlot == "Hand" || it.definition.equipSlot == "Two-Handed"
+                }
+
+                if (handSlotOccupied) {
+                    // Cannot equip - hand slots are occupied
+                    _uiMessage.value = "Cannot equip ${itemDef.name} - unequip items from your hands first"
+                    return@launch
+                }
+            } else if (itemDef.equipSlot == "Hand") {
+                // Check if two-handed item is equipped or both hands are full
+                val twoHandedEquipped = equippedItems.any {
+                    it.definition.equipSlot == "Two-Handed"
+                }
+
+                if (twoHandedEquipped) {
+                    // Cannot equip - two-handed item is equipped
+                    _uiMessage.value = "Cannot equip ${itemDef.name} - unequip your two-handed item first"
+                    return@launch
+                }
+
+                // Count equipped hand items
+                val handItemsCount = equippedItems.count {
+                    it.definition.equipSlot == "Hand"
+                }
+
+                if (handItemsCount >= 2) {
+                    // Cannot equip - both hands are full
+                    _uiMessage.value = "Cannot equip ${itemDef.name} - both hands are full"
+                    return@launch
+                }
+            } else {
+                // For all other slots, check if the specific slot is already occupied
+                val slotOccupied = equippedItems.any {
+                    it.definition.equipSlot == itemDef.equipSlot
+                }
+
+                if (slotOccupied) {
+                    // Cannot equip - slot is occupied
+                    _uiMessage.value = "Cannot equip ${itemDef.name} - ${itemDef.equipSlot} slot is already occupied"
+                    return@launch
+                }
+            }
+
+            // If we got here, we can equip the item
+            val updatedItem = item.copy(equipped = true)
             repository.updateItem(updatedItem)
         }
     }
@@ -177,6 +268,32 @@ class CharacterDetailViewModel(
     fun deleteItem(item: Item) {
         viewModelScope.launch {
             repository.deleteItem(item)
+        }
+    }
+
+    fun sellItem(item: Item, percentageValue: Int) {
+        viewModelScope.launch {
+            // Get the current character
+            characterData.value.character?.let { character ->
+                // Get the item definition to calculate value
+                val itemDefinition = characterData.value.itemsWithDefinitions
+                    .find { it.item.id == item.id }?.definition
+
+                if (itemDefinition != null) {
+                    // Calculate gold to add based on percentage
+                    val goldValue = itemDefinition.goldValue * item.quantity
+                    val goldToAdd = (goldValue * percentageValue) / 100
+
+                    // Update character's gold
+                    val updatedCharacter = character.copy(
+                        gold = character.gold + goldToAdd
+                    )
+                    updateCharacter(updatedCharacter)
+
+                    // Delete the sold item
+                    deleteItem(item)
+                }
+            }
         }
     }
 

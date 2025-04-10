@@ -3,11 +3,91 @@
     "name": "Six-shooter Pistol",
     "description": "A basic pistol with decent stopping power.",
     "type": "Weapon",
-    "keywords": ["Firearm", "Pistol"],
+    "keywords": ["Firearm", "Pistol",
+      {
+        "name": "Cowboy Hat",
+        "description": "A classic wide-brimmed hat that provides protection from the sun.",
+        "type": "Clothing",
+        "keywords": ["Hat"],
+        "statModifiers": {
+          "Initiative": 1
+        },
+        "anvilWeight": 0,
+        "equipSlot": "Head",
+        "goldValue": 35,
+        "upgradeSlots": 0
+      },
+      {
+        "name": "Leather Boots",
+        "description": "Sturdy boots made for long days in the saddle or on foot.",
+        "type": "Clothing",
+        "keywords": ["Footwear"],
+        "statModifiers": {
+          "Agility": 1
+        },
+        "anvilWeight": 1,
+        "equipSlot": "Feet",
+        "goldValue": 40,
+        "upgradeSlots": 0
+      },
+      {
+        "name": "Silver Pocket Watch",
+        "description": "A finely crafted timepiece that helps you keep track of time.",
+        "type": "Trinket",
+        "keywords": ["Valuable"],
+        "statModifiers": {
+          "Initiative": 1
+        },
+        "anvilWeight": 0,
+        "equipSlot": "Accessory",
+        "goldValue": 75,
+        "upgradeSlots": 0
+      },
+      {
+        "name": "Gunslinger's Gloves",
+        "description": "Specially designed gloves that improve your draw speed.",
+        "type": "Clothing",
+        "keywords": ["Gloves"],
+        "statModifiers": {
+          "Combat": 1,
+          "Initiative": 1
+        },
+        "anvilWeight": 0,
+        "equipSlot": "Hands",
+        "goldValue": 60,
+        "upgradeSlots": 0
+      },
+      {
+        "name": "Cavalry Sabre",
+        "description": "A curved blade designed for mounted combat.",
+        "type": "Weapon",
+        "keywords": ["Melee", "Blade"],
+        "statModifiers": {
+          "Combat": 2
+        },
+        "anvilWeight": 1,
+        "equipSlot": "Hand",
+        "goldValue": 90,
+        "upgradeSlots": 1
+      },
+      {
+        "name": "Tactical Shield",
+        "description": "A reinforced shield that provides excellent protection.",
+        "type": "Armor",
+        "keywords": ["Shield"],
+        "statModifiers": {
+          "Defense": 3
+        },
+        "anvilWeight": 2,
+        "equipSlot": "Hand",
+        "goldValue": 120,
+        "upgradeSlots": 1
+      }
+    ],
     "statModifiers": {
       "Combat": 1
     },
-    "weight": 1,
+    "anvilWeight": 1,
     "darkStoneCount": 0,
     "equipSlot": "Hand",
     "goldValue": 100,
@@ -18,7 +98,7 @@
     "description": "Basic medical supplies. Can be used to heal wounds.",
     "type": "Supply",
     "usageEffect": "Discard to heal D6 wounds",
-    "weight": 0,
+    "anvilWeight": 0,
     "goldValue": 25,
     "sideBagType": "Medical"
   },
@@ -27,7 +107,7 @@
     "description": "Strong liquor that can ease pain or bolster courage.",
     "type": "Supply",
     "usageEffect": "Discard to heal D3 sanity or gain +1 to your next roll",
-    "weight": 0,
+    "anvilWeight": 0,
     "goldValue": 15,
     "sideBagType": "Drink"
   },
@@ -39,7 +119,7 @@
     "statModifiers": {
       "Defense": 1
     },
-    "weight": 1,
+    "anvilWeight": 1,
     "equipSlot": "Body",
     "goldValue": 50,
     "upgradeSlots": 0
@@ -52,9 +132,122 @@
     "statModifiers": {
       "Luck": 1
     },
-    "weight": 0,
+    "anvilWeight": 0,
     "equipSlot": "Accessory",
     "isPersonalItem": true,
     "goldValue": 0
+  },
+  {
+    "name": "Shotgun",
+    "description": "A powerful but slow-to-reload weapon that can hit multiple targets.",
+    "type": "Weapon",
+    "keywords": ["Firearm", "Shotgun"],
+    "statModifiers": {
+      "Combat": 2
+    },
+    "anvilWeight": 2,
+    "equipSlot": "Hand",
+    "goldValue": 150,
+    "upgradeSlots": 1
+  },
+  {
+    "name": "Dynamite",
+    "description": "Explosive charge that can destroy obstacles or damage multiple enemies.",
+    "type": "Supply",
+    "keywords": ["Explosive"],
+    "usageEffect": "Roll 2D6 damage to all enemies in a room/area",
+    "anvilWeight": 1,
+    "goldValue": 75
+  },
+  {
+    "name": "Hardtack",
+    "description": "Simple, long-lasting ration that provides basic sustenance.",
+    "type": "Supply",
+    "keywords": ["Food"],
+    "usageEffect": "Discard to heal 1 health and 1 sanity",
+    "anvilWeight": 0,
+    "goldValue": 5,
+    "sideBagType": "Food"
+  },
+  {
+    "name": "Mining Pickaxe",
+    "description": "A sturdy tool for mining or self-defense.",
+    "type": "Tool",
+    "keywords": ["Mining", "Weapon"],
+    "statModifiers": {
+      "Strength": 1
+    },
+    "anvilWeight": 2,
+    "equipSlot": "Hand",
+    "goldValue": 45,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Miner's Helmet",
+    "description": "A helmet with a built-in lamp to illuminate dark areas.",
+    "type": "Gear",
+    "keywords": ["Light"],
+    "usageEffect": "Provides light in dark locations",
+    "anvilWeight": 1,
+    "equipSlot": "Head",
+    "goldValue": 60,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Bible",
+    "description": "A holy text that brings comfort and spiritual guidance.",
+    "type": "Book",
+    "keywords": ["Holy"],
+    "statModifiers": {
+      "Spirit": 1
+    },
+    "anvilWeight": 1,
+    "equipSlot": "Accessory",
+    "goldValue": 25,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Cavalry Saber",
+    "description": "A curved sword used by cavalry officers, effective in melee combat.",
+    "type": "Weapon",
+    "keywords": ["Melee", "Sword"],
+    "statModifiers": {
+      "Combat": 1,
+      "Initiative": 1
+    },
+    "anvilWeight": 1,
+    "equipSlot": "Hand",
+    "goldValue": 85,
+    "upgradeSlots": 1
+  },
+  {
+    "name": "Bag of Gold",
+    "description": "A sizable bag of gold coins from a lucky find.",
+    "type": "Treasure",
+    "usageEffect": "Gain 100 gold when selling",
+    "anvilWeight": 1,
+    "goldValue": 100
+  },
+  {
+    "name": "Heavy Rifle",
+    "description": "A powerful long-range weapon with excellent accuracy. Requires both hands to wield effectively.",
+    "type": "Weapon",
+    "keywords": ["Firearm", "Rifle"],
+    "statModifiers": {
+      "Combat": 3
+    },
+    "anvilWeight": 3,
+    "equipSlot": "Two-Handed",
+    "goldValue": 200,
+    "upgradeSlots": 2
+  },
+  {
+    "name": "Ammo Box",
+    "description": "Extra ammunition for firearms. Never leave town without it.",
+    "type": "Supply",
+    "keywords": ["Ammunition"],
+    "usageEffect": "Discard to reload any firearm without spending an action",
+    "anvilWeight": 1,
+    "goldValue": 30
   }
 ]
