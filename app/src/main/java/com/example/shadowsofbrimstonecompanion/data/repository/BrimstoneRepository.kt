@@ -3,12 +3,15 @@ package com.example.shadowsofbrimstonecompanion.data.repository
 import com.example.shadowsofbrimstonecompanion.data.dao.AttributesDao
 import com.example.shadowsofbrimstonecompanion.data.dao.CharacterClassDefinitionDao
 import com.example.shadowsofbrimstonecompanion.data.dao.CharacterDao
+import com.example.shadowsofbrimstonecompanion.data.dao.ContainerDao
 import com.example.shadowsofbrimstonecompanion.data.dao.ItemDao
 import com.example.shadowsofbrimstonecompanion.data.dao.ItemDefinitionDao
 import com.example.shadowsofbrimstonecompanion.data.dao.SkillDao
 import com.example.shadowsofbrimstonecompanion.data.entity.Attributes
 import com.example.shadowsofbrimstonecompanion.data.entity.Character
 import com.example.shadowsofbrimstonecompanion.data.entity.CharacterClassDefinition
+import com.example.shadowsofbrimstonecompanion.data.entity.Container
+import com.example.shadowsofbrimstonecompanion.data.entity.ContainerWithItems
 import com.example.shadowsofbrimstonecompanion.data.entity.Item
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemDefinition
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemWithDefinition
@@ -22,7 +25,7 @@ class BrimstoneRepository(
     private val skillDao: SkillDao,
     private val characterClassDefinitionDao: CharacterClassDefinitionDao,
     private val itemDefinitionDao: ItemDefinitionDao,
-
+    private val containerDao: ContainerDao
     ) {
     // Character operations
     val allCharacters: Flow<List<Character>> = characterDao.getAllCharacters()
@@ -71,6 +74,32 @@ class BrimstoneRepository(
 
     fun getItemsForCharacter(characterId: Long): Flow<List<Item>> {
         return itemDao.getItemsForCharacter(characterId)
+    }
+
+    // Container operations
+    suspend fun createContainer(itemId: Long, maxCapacity: Int, acceptedItemTypes: List<String> = emptyList(), isStash: Boolean = false, name: String? = null) {
+        val container = Container(itemId, maxCapacity, acceptedItemTypes, isStash, name)
+        containerDao.insert(container)
+    }
+
+    fun getContainerWithItems(containerId: Long): Flow<ContainerWithItems?> {
+        return containerDao.getContainerWithItems(containerId)
+    }
+
+    fun getContainersForCharacter(characterId: Long): Flow<List<ContainerWithItems>> {
+        return containerDao.getContainersForCharacter(characterId)
+    }
+
+    fun getStashes(): Flow<List<ContainerWithItems>> {
+        return containerDao.getStashes()
+    }
+
+    suspend fun moveItemToContainer(itemId: Long, containerId: Long?) {
+        val item = itemDao.getItemById(itemId)
+        if (item != null) {
+            val updatedItem = item.copy(containerId = containerId)
+            itemDao.update(updatedItem)
+        }
     }
 
     // Skill operations

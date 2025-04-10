@@ -1,5 +1,3 @@
-// app/src/main/java/com/example/shadowsofbrimstonecompanion/data/dao/ItemDao.kt
-
 package com.example.shadowsofbrimstonecompanion.data.dao
 
 import androidx.room.*
@@ -24,4 +22,16 @@ interface ItemDao {
     @Transaction
     @Query("SELECT * FROM items WHERE characterId = :characterId")
     fun getItemsWithDefinitionsForCharacter(characterId: Long): Flow<List<ItemWithDefinition>>
+
+    // New method to get a specific item by ID
+    @Query("SELECT * FROM items WHERE id = :itemId")
+    suspend fun getItemById(itemId: Long): Item?
+
+    // New query to get items in a specific container
+    @Query("SELECT * FROM items WHERE containerId = :containerId")
+    fun getItemsInContainer(containerId: Long): Flow<List<Item>>
+
+    // New query to get loose items (not in any container)
+    @Query("SELECT * FROM items WHERE characterId = :characterId AND containerId IS NULL")
+    fun getLooseItemsForCharacter(characterId: Long): Flow<List<Item>>
 }

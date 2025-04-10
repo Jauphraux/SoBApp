@@ -137,15 +137,15 @@
   {
     "name": "Prospector",
     "description": "A greedy and lucky old timer, always sniffing out riches.",
-    "startingHealth": 10,
-    "startingSanity": 9,
+    "startingHealth": 16,
+    "startingSanity": 14,
     "startingAttributes": {
-      "Agility": 2,
-      "Cunning": 3,
+      "Agility": 1,
+      "Cunning": 2,
       "Spirit": 2,
-      "Strength": 1,
-      "Lore": 2,
-      "Luck": 4
+      "Strength": 4,
+      "Lore": 3,
+      "Luck": 3
     },
     "imageResourceName": null
   },

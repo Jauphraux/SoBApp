@@ -23,5 +23,6 @@ data class Item(
     val itemDefinitionId: Long,
     val quantity: Int = 1,
     val equipped: Boolean = false,
-    val notes: String = ""
+    val notes: String = "",
+    val containerId: Long? = null // Added this field for container functionality
 )

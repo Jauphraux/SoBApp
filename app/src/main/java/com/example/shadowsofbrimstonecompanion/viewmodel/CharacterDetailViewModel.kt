@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.shadowsofbrimstonecompanion.BrimstoneApplication
 import com.example.shadowsofbrimstonecompanion.data.entity.Attributes
 import com.example.shadowsofbrimstonecompanion.data.entity.Character
+import com.example.shadowsofbrimstonecompanion.data.entity.Container
+import com.example.shadowsofbrimstonecompanion.data.entity.ContainerWithItems
 import com.example.shadowsofbrimstonecompanion.data.entity.Item
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemDefinition
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemWithDefinition
@@ -34,9 +36,13 @@ class CharacterDetailViewModel(
     // Character data flows
     val character: Flow<Character?> = repository.getCharacterById(characterId)
     val attributes: Flow<Attributes?> = repository.getAttributesForCharacter(characterId)
-    val itemsWithDefinitions: Flow<List<ItemWithDefinition>> = repository.getItemsWithDefinitionsForCharacter(characterId)
+    val itemsWithDefinitions: Flow<List<ItemWithDefinition>> =
+        repository.getItemsWithDefinitionsForCharacter(characterId)
     val skills: Flow<List<Skill>> = repository.getSkillsForCharacter(characterId)
     val allItemDefinitions: Flow<List<ItemDefinition>> = repository.allItemDefinitions
+    val containers: Flow<List<ContainerWithItems>> =
+        repository.getContainersForCharacter(characterId)
+    val stashes: Flow<List<ContainerWithItems>> = repository.getStashes()
 
     // Combined data for easy access in the UI
     val characterData: StateFlow<CharacterDetailState> = combine(
@@ -60,13 +66,49 @@ class CharacterDetailViewModel(
         initialValue = CharacterDetailState()
     )
 
+    // Combined data for container management
+    val storageData: StateFlow<StorageState> = combine(
+        containers,
+        stashes,
+        itemsWithDefinitions
+    ) { containers, stashes, itemsWithDefinitions ->
+        StorageState(
+            containers = containers,
+            stashes = stashes,
+            allItems = itemsWithDefinitions,
+            looseItems = itemsWithDefinitions.filter { it.item.containerId == null }
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = StorageState()
+    )
+
     // State flow for UI messages
     private val _uiMessage = MutableStateFlow<String?>(null)
     val uiMessage: StateFlow<String?> = _uiMessage.asStateFlow()
 
+    // Selected tab for container management
+    private val _selectedStorageTab = MutableStateFlow(StorageTab.CONTAINERS)
+    val selectedStorageTab: StateFlow<StorageTab> = _selectedStorageTab.asStateFlow()
+
+    // Show container screen state
+    private val _showContainerScreen = MutableStateFlow(false)
+    val showContainerScreen: StateFlow<Boolean> = _showContainerScreen.asStateFlow()
+
     // Function to clear UI messages
     fun clearUiMessage() {
         _uiMessage.value = null
+    }
+
+    // Function to toggle container screen visibility
+    fun toggleContainerScreen(show: Boolean) {
+        _showContainerScreen.value = show
+    }
+
+    // Function to change storage tab
+    fun setStorageTab(tab: StorageTab) {
+        _selectedStorageTab.value = tab
     }
 
     // State class to hold all character detail data
@@ -78,6 +120,19 @@ class CharacterDetailViewModel(
         val allItemDefinitions: List<ItemDefinition> = emptyList(),
         val isLoading: Boolean = true
     )
+
+    // State class for storage management
+    data class StorageState(
+        val containers: List<ContainerWithItems> = emptyList(),
+        val stashes: List<ContainerWithItems> = emptyList(),
+        val allItems: List<ItemWithDefinition> = emptyList(),
+        val looseItems: List<ItemWithDefinition> = emptyList()
+    )
+
+    // Enum for storage tabs
+    enum class StorageTab {
+        CONTAINERS, STASHES
+    }
 
     /**
      * Calculates all stat modifiers from equipped items
@@ -106,7 +161,12 @@ class CharacterDetailViewModel(
      */
     fun calculateTotalAnvilWeight(): Int {
         return characterData.value.itemsWithDefinitions.sumOf { itemWithDef ->
-            itemWithDef.definition.anvilWeight * itemWithDef.item.quantity
+            // Only count items not in containers toward encumbrance
+            if (itemWithDef.item.containerId == null) {
+                itemWithDef.definition.anvilWeight * itemWithDef.item.quantity
+            } else {
+                0
+            }
         }
     }
 
@@ -221,7 +281,8 @@ class CharacterDetailViewModel(
 
                 if (handSlotOccupied) {
                     // Cannot equip - hand slots are occupied
-                    _uiMessage.value = "Cannot equip ${itemDef.name} - unequip items from your hands first"
+                    _uiMessage.value =
+                        "Cannot equip ${itemDef.name} - unequip items from your hands first"
                     return@launch
                 }
             } else if (itemDef.equipSlot == "Hand") {
@@ -232,7 +293,8 @@ class CharacterDetailViewModel(
 
                 if (twoHandedEquipped) {
                     // Cannot equip - two-handed item is equipped
-                    _uiMessage.value = "Cannot equip ${itemDef.name} - unequip your two-handed item first"
+                    _uiMessage.value =
+                        "Cannot equip ${itemDef.name} - unequip your two-handed item first"
                     return@launch
                 }
 
@@ -254,7 +316,8 @@ class CharacterDetailViewModel(
 
                 if (slotOccupied) {
                     // Cannot equip - slot is occupied
-                    _uiMessage.value = "Cannot equip ${itemDef.name} - ${itemDef.equipSlot} slot is already occupied"
+                    _uiMessage.value =
+                        "Cannot equip ${itemDef.name} - ${itemDef.equipSlot} slot is already occupied"
                     return@launch
                 }
             }
@@ -319,6 +382,114 @@ class CharacterDetailViewModel(
     fun deleteSkill(skill: Skill) {
         viewModelScope.launch {
             repository.deleteSkill(skill)
+        }
+    }
+
+    // Container management functions
+    fun createContainer(
+        itemId: Long,
+        maxCapacity: Int,
+        acceptedItemTypes: List<String> = emptyList(),
+        isStash: Boolean = false,
+        name: String? = null
+    ) {
+        viewModelScope.launch {
+            repository.createContainer(itemId, maxCapacity, acceptedItemTypes, isStash, name)
+        }
+    }
+
+    fun createStash(name: String, capacity: Int, acceptedTypes: List<String> = emptyList()) {
+        viewModelScope.launch {
+            // Create a virtual item for the stash
+            val stashItemId = repository.insertItemDefinition(
+                ItemDefinition(
+                    name = name,
+                    description = "A permanent storage location",
+                    type = "Stash",
+                    keywords = listOf("Container", "Storage"),
+                    isContainer = true,
+                    containerCapacity = capacity,
+                    containerAcceptedTypes = acceptedTypes
+                )
+            )
+
+            // Create the container
+            repository.createContainer(
+                itemId = stashItemId,
+                maxCapacity = capacity,
+                acceptedItemTypes = acceptedTypes,
+                isStash = true,
+                name = name
+            )
+        }
+    }
+
+    fun moveItemToContainer(itemId: Long, containerId: Long?) {
+        viewModelScope.launch {
+            // If containerId is null, we're removing from container
+            if (containerId == null) {
+                repository.moveItemToContainer(itemId, null)
+                return@launch
+            }
+
+            // Check if container exists and has capacity
+            val container = storageData.value.containers.find { it.container.itemId == containerId }
+                ?: storageData.value.stashes.find { it.container.itemId == containerId }
+
+            if (container == null) {
+                _uiMessage.value = "Container not found"
+                return@launch
+            }
+
+            // Check capacity
+            if (container.items.size >= container.container.maxCapacity) {
+                _uiMessage.value = "Container is full"
+                return@launch
+            }
+
+            // Check item type restrictions
+            if (container.container.acceptedItemTypes.isNotEmpty()) {
+                val item = storageData.value.allItems.find { it.item.id == itemId }
+                if (item != null) {
+                    val isAccepted = container.container.acceptedItemTypes.any { acceptedType ->
+                        item.definition.type == acceptedType ||
+                                item.definition.keywords.contains(acceptedType)
+                    }
+
+                    if (!isAccepted) {
+                        _uiMessage.value = "This container cannot hold this type of item"
+                        return@launch
+                    }
+                }
+            }
+
+            // All checks passed, move the item
+            repository.moveItemToContainer(itemId, containerId)
+        }
+    }
+
+    // Function to check if an item is a container
+    fun isItemContainer(itemId: Long): Boolean {
+        return storageData.value.allItems.any {
+            it.item.id == itemId && it.definition.isContainer
+        }
+    }
+
+    // Function to create a container from an item
+    fun createContainerFromItem(itemId: Long) {
+        viewModelScope.launch {
+            val itemWithDef = storageData.value.allItems.find { it.item.id == itemId }
+            if (itemWithDef != null && itemWithDef.definition.isContainer) {
+                repository.createContainer(
+                    itemId = itemId,
+                    maxCapacity = itemWithDef.definition.containerCapacity,
+                    acceptedItemTypes = itemWithDef.definition.containerAcceptedTypes,
+                    isStash = false,
+                    name = itemWithDef.definition.name
+                )
+            } else {
+                _uiMessage.value = "This item cannot be used as a container"
+            }
         }
     }
 

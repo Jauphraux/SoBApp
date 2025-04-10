@@ -3,87 +3,7 @@
     "name": "Six-shooter Pistol",
     "description": "A basic pistol with decent stopping power.",
     "type": "Weapon",
-    "keywords": ["Firearm", "Pistol",
-      {
-        "name": "Cowboy Hat",
-        "description": "A classic wide-brimmed hat that provides protection from the sun.",
-        "type": "Clothing",
-        "keywords": ["Hat"],
-        "statModifiers": {
-          "Initiative": 1
-        },
-        "anvilWeight": 0,
-        "equipSlot": "Head",
-        "goldValue": 35,
-        "upgradeSlots": 0
-      },
-      {
-        "name": "Leather Boots",
-        "description": "Sturdy boots made for long days in the saddle or on foot.",
-        "type": "Clothing",
-        "keywords": ["Footwear"],
-        "statModifiers": {
-          "Agility": 1
-        },
-        "anvilWeight": 1,
-        "equipSlot": "Feet",
-        "goldValue": 40,
-        "upgradeSlots": 0
-      },
-      {
-        "name": "Silver Pocket Watch",
-        "description": "A finely crafted timepiece that helps you keep track of time.",
-        "type": "Trinket",
-        "keywords": ["Valuable"],
-        "statModifiers": {
-          "Initiative": 1
-        },
-        "anvilWeight": 0,
-        "equipSlot": "Accessory",
-        "goldValue": 75,
-        "upgradeSlots": 0
-      },
-      {
-        "name": "Gunslinger's Gloves",
-        "description": "Specially designed gloves that improve your draw speed.",
-        "type": "Clothing",
-        "keywords": ["Gloves"],
-        "statModifiers": {
-          "Combat": 1,
-          "Initiative": 1
-        },
-        "anvilWeight": 0,
-        "equipSlot": "Hands",
-        "goldValue": 60,
-        "upgradeSlots": 0
-      },
-      {
-        "name": "Cavalry Sabre",
-        "description": "A curved blade designed for mounted combat.",
-        "type": "Weapon",
-        "keywords": ["Melee", "Blade"],
-        "statModifiers": {
-          "Combat": 2
-        },
-        "anvilWeight": 1,
-        "equipSlot": "Hand",
-        "goldValue": 90,
-        "upgradeSlots": 1
-      },
-      {
-        "name": "Tactical Shield",
-        "description": "A reinforced shield that provides excellent protection.",
-        "type": "Armor",
-        "keywords": ["Shield"],
-        "statModifiers": {
-          "Defense": 3
-        },
-        "anvilWeight": 2,
-        "equipSlot": "Hand",
-        "goldValue": 120,
-        "upgradeSlots": 1
-      }
-    ],
+    "keywords": ["Firearm", "Pistol"],
     "statModifiers": {
       "Combat": 1
     },
@@ -97,6 +17,7 @@
     "name": "Bandages",
     "description": "Basic medical supplies. Can be used to heal wounds.",
     "type": "Supply",
+    "keywords": [],
     "usageEffect": "Discard to heal D6 wounds",
     "anvilWeight": 0,
     "goldValue": 25,
@@ -106,6 +27,7 @@
     "name": "Whiskey",
     "description": "Strong liquor that can ease pain or bolster courage.",
     "type": "Supply",
+    "keywords": [],
     "usageEffect": "Discard to heal D3 sanity or gain +1 to your next roll",
     "anvilWeight": 0,
     "goldValue": 15,
@@ -224,6 +146,7 @@
     "name": "Bag of Gold",
     "description": "A sizable bag of gold coins from a lucky find.",
     "type": "Treasure",
+    "keywords": [],
     "usageEffect": "Gain 100 gold when selling",
     "anvilWeight": 1,
     "goldValue": 100
@@ -249,5 +172,99 @@
     "usageEffect": "Discard to reload any firearm without spending an action",
     "anvilWeight": 1,
     "goldValue": 30
+  },
+  {
+    "name": "Cowboy Hat",
+    "description": "A classic wide-brimmed hat that provides protection from the sun.",
+    "type": "Clothing",
+    "keywords": ["Hat"],
+    "statModifiers": {
+      "Initiative": 1
+    },
+    "anvilWeight": 0,
+    "equipSlot": "Head",
+    "goldValue": 35,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Leather Boots",
+    "description": "Sturdy boots made for long days in the saddle or on foot.",
+    "type": "Clothing",
+    "keywords": ["Footwear"],
+    "statModifiers": {
+      "Agility": 1
+    },
+    "anvilWeight": 1,
+    "equipSlot": "Feet",
+    "goldValue": 40,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Silver Pocket Watch",
+    "description": "A finely crafted timepiece that helps you keep track of time.",
+    "type": "Trinket",
+    "keywords": ["Valuable"],
+    "statModifiers": {
+      "Initiative": 1
+    },
+    "anvilWeight": 0,
+    "equipSlot": "Accessory",
+    "goldValue": 75,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Gunslinger's Gloves",
+    "description": "Specially designed gloves that improve your draw speed.",
+    "type": "Clothing",
+    "keywords": ["Gloves"],
+    "statModifiers": {
+      "Combat": 1,
+      "Initiative": 1
+    },
+    "anvilWeight": 0,
+    "equipSlot": "Hands",
+    "goldValue": 60,
+    "upgradeSlots": 0
+  },
+  {
+    "name": "Cavalry Sabre",
+    "description": "A curved blade designed for mounted combat.",
+    "type": "Weapon",
+    "keywords": ["Melee", "Blade"],
+    "statModifiers": {
+      "Combat": 2
+    },
+    "anvilWeight": 1,
+    "equipSlot": "Hand",
+    "goldValue": 90,
+    "upgradeSlots": 1
+  },
+  {
+    "name": "Tactical Shield",
+    "description": "A reinforced shield that provides excellent protection.",
+    "type": "Armor",
+    "keywords": ["Shield"],
+    "statModifiers": {
+      "Defense": 3
+    },
+    "anvilWeight": 2,
+    "equipSlot": "Hand",
+    "goldValue": 120,
+    "upgradeSlots": 1
+  },
+  {
+    "name": "Tomb Chest",
+    "description": "An ancient sarcophagus-shaped box that can safely hold Dark Stone.",
+    "type": "Gear",
+    "keywords": ["Container"],
+    "statModifiers": {},
+    "anvilWeight": 1,
+    "darkStoneCount": 0,
+    "equipSlot": null,
+    "goldValue": 150,
+    "upgradeSlots": 0,
+    "isContainer": true,
+    "containerCapacity": 8,
+    "containerAcceptedTypes": ["Dark Stone"]
   }
 ]

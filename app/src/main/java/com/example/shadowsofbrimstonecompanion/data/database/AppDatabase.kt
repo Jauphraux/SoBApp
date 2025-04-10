@@ -12,12 +12,14 @@ import com.example.shadowsofbrimstonecompanion.data.dao.ItemDao
 import com.example.shadowsofbrimstonecompanion.data.dao.SkillDao
 import com.example.shadowsofbrimstonecompanion.data.dao.CharacterClassDefinitionDao
 import com.example.shadowsofbrimstonecompanion.data.dao.ItemDefinitionDao
+import com.example.shadowsofbrimstonecompanion.data.dao.ContainerDao
 import com.example.shadowsofbrimstonecompanion.data.entity.Attributes
 import com.example.shadowsofbrimstonecompanion.data.entity.Character
 import com.example.shadowsofbrimstonecompanion.data.entity.Item
 import com.example.shadowsofbrimstonecompanion.data.entity.Skill
 import com.example.shadowsofbrimstonecompanion.data.entity.CharacterClassDefinition
 import com.example.shadowsofbrimstonecompanion.data.entity.ItemDefinition
+import com.example.shadowsofbrimstonecompanion.data.entity.Container
 
 @Database(
     entities = [
@@ -26,9 +28,10 @@ import com.example.shadowsofbrimstonecompanion.data.entity.ItemDefinition
         Item::class,
         Skill::class,
         CharacterClassDefinition::class,
-        ItemDefinition::class
+        ItemDefinition::class,
+        Container::class  // Add Container entity
     ],
-    version = 3,
+    version = 4,  // Increment version number
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -39,6 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun skillDao(): SkillDao
     abstract fun characterClassDefinitionDao(): CharacterClassDefinitionDao
     abstract fun itemDefinitionDao(): ItemDefinitionDao
+    abstract fun containerDao(): ContainerDao  // Add ContainerDao
 
     companion object {
         @Volatile

@@ -49,9 +49,11 @@ fun CharacterDetailScreen(
     val state by viewModel.characterData.collectAsState()
     val character = state.character
     val attributes = state.attributes
+    val showContainerScreen by viewModel.showContainerScreen.collectAsState()
+    val storageData by viewModel.storageData.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Character", "Inventory", "Equipment", "Skills")
+    val tabs = listOf("Character", "Inventory", "Gear", "Skills")
 
     Scaffold(
         topBar = {
@@ -83,80 +85,115 @@ fun CharacterDetailScreen(
             )
         }
     ) { padding ->
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+        if (showContainerScreen) {
+            ContainerScreen(
+                containers = storageData.containers,
+                allItems = storageData.allItems,
+                looseItems = storageData.looseItems,
+                onMoveItem = { itemId, containerId -> viewModel.moveItemToContainer(itemId, containerId) },
+                onClose = { viewModel.toggleContainerScreen(false) }
+            )
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                // Tab Row
-                TabRow(selectedTabIndex = selectedTabIndex) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            text = { Text(title) }
-                        )
-                    }
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
+                    // Tab Row
+                    TabRow(selectedTabIndex = selectedTabIndex) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = { Text(title) }
+                            )
+                        }
+                    }
 
-                // Tab Content
-                when (selectedTabIndex) {
-                    0 -> {
-                        // Calculate modifiers when showing the character tab
-                        val itemModifiers = viewModel.calculateEquippedItemModifiers()
+                    // Tab Content
+                    when (selectedTabIndex) {
+                        0 -> {
+                            // Calculate modifiers when showing the character tab
+                            val itemModifiers = viewModel.calculateEquippedItemModifiers()
 
-                        CharacterTab(
-                            character = character,
-                            attributes = attributes,
-                            itemModifiers = itemModifiers,
-                            onHealthIncrease = { viewModel.increaseHealth() },
-                            onHealthDecrease = { viewModel.decreaseHealth() },
-                            onSanityIncrease = { viewModel.increaseSanity() },
-                            onSanityDecrease = { viewModel.decreaseSanity() },
-                            onAddXP = { viewModel.addExperience(10) },
-                            onLevelUp = { viewModel.levelUp() },
-                            viewModel = viewModel
+                            CharacterTab(
+                                character = character,
+                                attributes = attributes,
+                                itemModifiers = itemModifiers,
+                                onHealthIncrease = { viewModel.increaseHealth() },
+                                onHealthDecrease = { viewModel.decreaseHealth() },
+                                onSanityIncrease = { viewModel.increaseSanity() },
+                                onSanityDecrease = { viewModel.decreaseSanity() },
+                                onAddXP = { viewModel.addExperience(10) },
+                                onLevelUp = { viewModel.levelUp() },
+                                viewModel = viewModel
+                            )
+                        }
+                        1 -> {
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                // Container management button
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Button(
+                                        onClick = { viewModel.toggleContainerScreen(true) },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    ) {
+                                        Icon(Icons.Default.Inventory2, contentDescription = "Manage Containers")
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Manage Containers")
+                                    }
+                                }
+
+                                // Existing inventory tab content
+                                InventoryTab(
+                                    itemsWithDefinitions = state.itemsWithDefinitions.filter { it.item.containerId == null }, // Only show loose items
+                                    allItemDefinitions = state.allItemDefinitions,
+                                    onToggleEquipped = { viewModel.toggleItemEquipped(it) },
+                                    onDeleteItem = { viewModel.deleteItem(it) },
+                                    onAddItem = { itemDefId, quantity, notes ->
+                                        viewModel.addItem(itemDefId, quantity, notes)
+                                    },
+                                    onSellItem = { item, percentage -> viewModel.sellItem(item, percentage) },
+                                    currentEncumbrance = viewModel.calculateTotalAnvilWeight(),
+                                    maxEncumbrance = state.attributes?.strength?.plus(5) ?: 0,
+                                    errorMessage = viewModel.uiMessage.collectAsState().value,
+                                    onErrorMessageShown = { viewModel.clearUiMessage() }
+                                )
+                            }
+                        }
+                        2 -> EquipmentScreen(
+                            itemsWithDefinitions = state.itemsWithDefinitions,
+                            allItems = state.itemsWithDefinitions,
+                            onToggleEquipped = { viewModel.toggleItemEquipped(it) },
+                            errorMessage = viewModel.uiMessage.collectAsState().value,
+                            onErrorMessageShown = { viewModel.clearUiMessage() }
+                        )
+                        3 -> SkillsTab(
+                            skills = state.skills,
+                            onUpgradeSkill = { viewModel.upgradeSkill(it) },
+                            onDeleteSkill = { viewModel.deleteSkill(it) },
+                            onAddSkill = { name, description ->
+                                viewModel.addSkill(name, description = description)
+                            }
                         )
                     }
-                    1 -> InventoryTab(
-                        itemsWithDefinitions = state.itemsWithDefinitions,
-                        allItemDefinitions = state.allItemDefinitions,
-                        onToggleEquipped = { viewModel.toggleItemEquipped(it) },
-                        onDeleteItem = { viewModel.deleteItem(it) },
-                        onAddItem = { itemDefId, quantity, notes ->
-                            viewModel.addItem(itemDefId, quantity, notes)
-                        },
-                        onSellItem = { item, percentage -> viewModel.sellItem(item, percentage) },
-                        currentEncumbrance = viewModel.calculateTotalAnvilWeight(),
-                        maxEncumbrance = state.attributes?.strength?.plus(5) ?: 0,
-                        errorMessage = viewModel.uiMessage.collectAsState().value,
-                        onErrorMessageShown = { viewModel.clearUiMessage() }
-                    )
-                    2 -> EquipmentScreen(
-                        itemsWithDefinitions = state.itemsWithDefinitions,
-                        allItems = state.itemsWithDefinitions,
-                        onToggleEquipped = { viewModel.toggleItemEquipped(it) },
-                        errorMessage = viewModel.uiMessage.collectAsState().value,
-                        onErrorMessageShown = { viewModel.clearUiMessage() }
-                    )
-                    3 -> SkillsTab(
-                        skills = state.skills,
-                        onUpgradeSkill = { viewModel.upgradeSkill(it) },
-                        onDeleteSkill = { viewModel.deleteSkill(it) },
-                        onAddSkill = { name, description ->
-                            viewModel.addSkill(name, description = description)
-                        }
-                    )
                 }
             }
         }
